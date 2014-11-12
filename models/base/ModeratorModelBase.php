@@ -39,16 +39,14 @@ abstract class Curate_ModeratorModelBase extends Curate_AppModel
     }
 
   /**
-   * adds curation moderator ability to a user.  requires calling
-   * user to be a site admin.
+   * adds curation moderator ability to a user.
    */
   function empowerCurationModerator($userDao)
     {
-//#TODO FIX
-    $curationModerator = MidasLoader::newDao('ModeratorDao', 'curate');
-    $curationModerator->setUserId($userDao->getId());
-    $this->save($curationModerator);
-    return $curationModerator;
+    $curationModeratorDao = MidasLoader::newDao('ModeratorDao', 'curate');
+    $curationModeratorDao->setUserId($userDao->getUserId());
+    $this->save($curationModeratorDao);
+    return $curationModeratorDao;
     }
 
 

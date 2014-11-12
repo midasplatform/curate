@@ -22,6 +22,7 @@
 class Curate_ApiComponent extends AppComponent
   {
 
+
   /**
    * Helper function for verifying keys in an input array
    */
@@ -56,7 +57,7 @@ class Curate_ApiComponent extends AppComponent
     $userDao = $this->_getUser($args);
     if(!$userDao)
       {
-      throw new Exception('You must login to enable curation on a folder.', 403);
+      throw new Exception('You must login to enable curation on a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
@@ -68,7 +69,7 @@ class Curate_ApiComponent extends AppComponent
       }
     if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
       {
-      throw new Exception("Admin permissions required on the folder.", 403);
+      throw new Exception("Admin permissions required on the folder.", 401);
       }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
@@ -88,7 +89,7 @@ class Curate_ApiComponent extends AppComponent
     $userDao = $this->_getUser($args);
     if(!$userDao)
       {
-      throw new Exception('You must login to disable curation on a folder.', 403);
+      throw new Exception('You must login to disable curation on a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
@@ -100,12 +101,44 @@ class Curate_ApiComponent extends AppComponent
       }
     if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
       {
-      throw new Exception("Admin permissions required on the folder.", 403);
+      throw new Exception("Admin permissions required on the folder.", 401);
       }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
     // return int representation of boolean value
     return $curatedfolderModel->disableFolderCuration($folderDao) ? 1 : 0;
+    }
+
+  /**
+   * Give the ability to moderate curated folders to the passed in user,
+   * calling user required to be a site admin.
+   * @param user_id id of the user to empower.
+   * @return "OK" on success
+   */
+  public function empowerModerator($args)
+    {
+    $userDao = $this->_getUser($args);
+    if(!$userDao)
+      {
+      throw new Exception('You must login to empower a curation moderator.', 401);
+      }
+    if(!$userDao->getAdmin())
+      {
+      throw new Exception('You must be a site admin to empower a curation moderator.', 401);
+      }
+
+    //return $args;
+    $this->_checkKeys(array('user_id'), $args);
+    $userModel = MidasLoader::loadModel('User');
+    $empoweredUserDao = $userModel->load($args['user_id']);
+    if(!$empoweredUserDao)
+      {
+      throw new Exception('No user found with that id.', 404);
+      }
+// TODO ensure we are only creating one, in the model
+    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
+    $curationModeratorDao = $moderatorModel->empowerCurationModerator($empoweredUserDao);
+    return "OK";
     }
 
 

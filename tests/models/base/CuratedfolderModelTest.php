@@ -97,27 +97,4 @@ class CuratedfolderModelTest extends DatabaseTestCase
 
 
 
-/*
-  function disableFolderCuration($folderDao)
-    {
-    if(is_null($folderDao))
-      {
-      throw new Exception('Non-null folder required to disable curation.', -1);
-      }
-
-    $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
-    if(count($curatedfolderDaos) ==  0)
-      {
-      // if the folder isn't under curation then there is nothing to do
-      return false;
-      } 
-    else 
-      {
-      $curatedfolderDao = curatedfolderDaos[0];
-      $this->delete($curatedfolderDao);
-      return true;
-      } 
-    }*/
-
-
   }
