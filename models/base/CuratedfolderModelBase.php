@@ -44,6 +44,11 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
 
   function enableFolderCuration($folderDao)
     {
+    if(is_null($folderDao))
+      {
+      throw new Exception('Non-null folder required to enable curation.', -1);
+      }
+
     // if already under curation return the curatedfolder
     $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
     if(count($curatedfolderDaos) > 0)
@@ -57,6 +62,14 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
     $this->save($curatedfolderDao);
     return $curatedfolderDao;
     }
+
+  function disableFolderCuration($folderDao)
+    {
+
+    }
+
+
+
 
 
 

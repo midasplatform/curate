@@ -36,9 +36,22 @@ class CuratedfolderModelTest extends DatabaseTestCase
   /** testSaveAndLoad*/
   public function testEnableFolderCuration()
     {
-    $folderDao = $this->Folder->load(1000);
-    // curate a folder and ensure it is tracked for curation
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+
+    // test null folderDao
+    $folderDao = null;
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
+      $this->fail('Should have failed calling enableFolderCuration on null folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    // curate a folder and ensure it is tracked for curation
+    $folderDao = $this->Folder->load(1000);
     $curatedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
 
     $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
