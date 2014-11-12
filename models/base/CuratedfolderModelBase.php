@@ -18,8 +18,8 @@
  limitations under the License.
 =========================================================================*/
 
-/** Base model class template for the curate module */
 require_once BASE_PATH.'/modules/curate/constant/module.php';
+/** Base model class template for the curate module */
 abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
   {
   /** Constructor */
@@ -28,7 +28,7 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
     parent::__construct();
     $this->_name = 'curate_curatedfolder';
     $this->_key = 'curatedfolder_id';
-  
+
     $this->_mainData = array(
       'curatedfolder_id' => array('type' => MIDAS_DATA),
       'folder_id' => array('type' => MIDAS_DATA),
@@ -42,6 +42,10 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
     $this->initialize();
     }
 
+  /** tracks the passed in folder for curation.  If the passed in folder
+   * had not yet been tracked for curation, will set curate state to construction.
+   * requires ADMIN access to the folder.
+   */
   function enableFolderCuration($folderDao)
     {
     if(is_null($folderDao))
@@ -54,7 +58,7 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
     if(count($curatedfolderDaos) > 0)
       {
       return $curatedfolderDaos[0];
-      } 
+      }
 
     $curatedfolderDao = MidasLoader::newDao('CuratedfolderDao', 'curate');
     $curatedfolderDao->setFolderId($folderDao->getFolderId());
@@ -63,15 +67,30 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
     return $curatedfolderDao;
     }
 
+  /** removes the passed in folder from being tracked for curation.  If the passed
+   * in folder was tracked previously returns true, false otherwise.
+   * requires ADMIN access to the folder.
+   */
   function disableFolderCuration($folderDao)
     {
+    if(is_null($folderDao))
+      {
+      throw new Exception('Non-null folder required to disable curation.', -1);
+      }
 
+    $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
+    if(count($curatedfolderDaos) ==  0)
+      {
+      // if the folder isn't under curation then there is nothing to do
+      return false;
+      }
+    else
+      {
+      $curatedfolderDao = $curatedfolderDaos[0];
+      $this->delete($curatedfolderDao);
+      return true;
+      }
     }
-
-
-
-
-
 
 
   }

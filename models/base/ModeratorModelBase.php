@@ -38,6 +38,10 @@ abstract class Curate_ModeratorModelBase extends Curate_AppModel
     $this->initialize();
     }
 
+  /**
+   * adds curation moderator ability to a user.  requires calling
+   * user to be a site admin.
+   */
   function empowerCurationModerator($userDao)
     {
 //#TODO FIX

@@ -33,12 +33,12 @@ class CuratedfolderModelTest extends DatabaseTestCase
     parent::setUp();
     }
 
-  /** testSaveAndLoad*/
-  public function testEnableFolderCuration()
+  /** testEnableAndDisableFolderCuration*/
+  public function testEnableAndDisableFolderCuration()
     {
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
 
-    // test null folderDao
+    // test curating null folderDao
     $folderDao = null;
     try
       {
@@ -63,5 +63,61 @@ class CuratedfolderModelTest extends DatabaseTestCase
 
     $curatedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
     $this->assertEquals($curatedfolderDao->getCuratedfolderId(), $curatedfolderId);
+
+    // test disabling curation on a null folderDao
+    $folderDao = null;
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+      $this->fail('Should have failed calling disableFolderCuration on null folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    // disable a curated folder
+    $folderDao = $this->Folder->load(1000);
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    $this->assertEquals($disabled, true);
+
+    // disable a non-tracked folder, should return false
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    $this->assertEquals($disabled, false);
+
+    // ensure that we can re-enable curation
+    $curatedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
+
+    $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
+    $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_CONSTRUCTION);
     }
+
+
+
+
+
+
+/*
+  function disableFolderCuration($folderDao)
+    {
+    if(is_null($folderDao))
+      {
+      throw new Exception('Non-null folder required to disable curation.', -1);
+      }
+
+    $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
+    if(count($curatedfolderDaos) ==  0)
+      {
+      // if the folder isn't under curation then there is nothing to do
+      return false;
+      } 
+    else 
+      {
+      $curatedfolderDao = curatedfolderDaos[0];
+      $this->delete($curatedfolderDao);
+      return true;
+      } 
+    }*/
+
+
   }

@@ -157,23 +157,22 @@ class ApiControllerTest extends ControllerTestCase
     }
 
 
-  /** test enableCuration */
+  /** test enableAndDisableCuration */
   public function testEnableCuration()
     {
-    $apiMethod = 'midas.curate.enable.curation';
+    $enableCurationApiMethod = 'midas.curate.enable.curation';
     $httpMethod = 'POST';
-    
-    $this->_requireValidSession($apiMethod, $httpMethod);
 
-    $this->_requireValidFolderId($apiMethod, $httpMethod);
-
-    $this->_requireFolderAdminAccess($apiMethod, $httpMethod);
+    // basic validation on enableCuration 
+    $this->_requireValidSession($enableCurationApiMethod, $httpMethod);
+    $this->_requireValidFolderId($enableCurationApiMethod, $httpMethod);
+    $this->_requireFolderAdminAccess($enableCurationApiMethod, $httpMethod);
      
     $this->resetAll();
     $userToken = $this->_loginUsingApiKey(); 
     // folder is tracked under curation and curation status is construction
     $this->resetAll();
-    $this->params['method'] = $apiMethod;
+    $this->params['method'] = $enableCurationApiMethod;
     $this->params['token'] = $userToken;
     $this->request->setMethod($httpMethod);
     $this->params['folder_id'] = 1000;
@@ -191,7 +190,7 @@ class ApiControllerTest extends ControllerTestCase
 
     // call the API again and ensure that no additional row is created
     $this->resetAll();
-    $this->params['method'] = $apiMethod;
+    $this->params['method'] = $enableCurationApiMethod;
     $this->params['token'] = $userToken;
     $this->request->setMethod($httpMethod);
     $this->params['folder_id'] = 1000;
@@ -204,5 +203,33 @@ class ApiControllerTest extends ControllerTestCase
     $loadedCuratedfolderDao = $curatedfolderModel->load($curatedfolderIdTwo);
     $this->assertEquals($loadedCuratedfolderDao->getFolderId(), 1000);
     $this->assertEquals($loadedCuratedfolderDao->getCurationState(), CURATE_STATE_CONSTRUCTION);
+
+    $disableCurationApiMethod = 'midas.curate.disable.curation';
+
+    // basic validation on disableCuration 
+    $this->_requireValidSession($disableCurationApiMethod, $httpMethod);
+    $this->_requireValidFolderId($disableCurationApiMethod, $httpMethod);
+    $this->_requireFolderAdminAccess($disableCurationApiMethod, $httpMethod);
+
+    // disable curation on the folder
+    $this->resetAll();
+    $this->params['method'] = $disableCurationApiMethod;
+    $this->params['token'] = $userToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+    $this->assertEquals(1, $resp->data, "disableCuration should have returned 1 for folder under curation");
+
+    // call disable again, should return false
+    $this->resetAll();
+    $this->params['method'] = $disableCurationApiMethod;
+    $this->params['token'] = $userToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+    $this->assertEquals(0, $resp->data, "disableCuration should have returned 0 for folder not under curation");
+
     }
  }

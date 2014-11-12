@@ -17,8 +17,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
-/** Notification manager for the curate module */
 require_once BASE_PATH . '/modules/api/library/APIEnabledNotification.php';
+/** Notification manager for the curate module */
 class Curate_Notification extends ApiEnabled_Notification
   {
   public $moduleName = 'curate';
