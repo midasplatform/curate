@@ -12,8 +12,7 @@
          http://www.apache.org/licenses/LICENSE-2.0.txt
 
  Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
@@ -52,6 +51,7 @@ class CuratedfolderModelTest extends DatabaseTestCase
 
     // curate a folder and ensure it is tracked for curation
     $folderDao = $this->Folder->load(1000);
+$disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     $curatedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
 
     $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
@@ -90,10 +90,57 @@ class CuratedfolderModelTest extends DatabaseTestCase
 
     $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
     $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_CONSTRUCTION);
+
+    // disable the folder to leave it in a known state
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     }
 
+  /** testRequestCurationApproval*/
+  public function testRequestCurationApproval()
+    {
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
 
+    // test requesting approval on a null folderDao
+    $folderDao = null;
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+      $this->fail('Should have failed calling requestCurationApproval on null folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
 
+    $folderDao = $this->Folder->load(1000);
+    // ensure this folder is not tracked for curation
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    // request curation approval on a folder that isn't tracked under curation
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+      $this->fail('Should have failed calling requestCurationApproval on untracked folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    $enabled = $curatedfolderModel->enableFolderCuration($folderDao);
+
+    // empower a user as a curation moderator
+    $userModel = MidasLoader::loadModel('User');
+    $userDao = $userModel->load(1);
+    $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
+    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
+
+    $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+    $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
+    $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_REQUESTED);
+
+    // ensure this folder is not tracked for curation
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    }
 
 
 

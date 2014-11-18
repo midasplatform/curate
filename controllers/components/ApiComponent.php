@@ -127,7 +127,6 @@ class Curate_ApiComponent extends AppComponent
       throw new Exception('You must be a site admin to empower a curation moderator.', 401);
       }
 
-    //return $args;
     $this->_checkKeys(array('user_id'), $args);
     $userModel = MidasLoader::loadModel('User');
     $empoweredUserDao = $userModel->load($args['user_id']);
@@ -135,9 +134,48 @@ class Curate_ApiComponent extends AppComponent
       {
       throw new Exception('No user found with that id.', 404);
       }
-// TODO ensure we are only creating one, in the model
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
     $curationModeratorDao = $moderatorModel->empowerCurationModerator($empoweredUserDao);
+    return "OK";
+    }
+
+  /**
+   * Request that a curated folder be approved, will email all site admins and
+   * curation moderators, calling user must have Admin access to the folder..
+   * @param folder_id id of the folder to request approval for.
+   * @param message optional message to include in the email.
+   * @return "OK" on success
+   */
+  public function requestApproval($args)
+    {
+    $userDao = $this->_getUser($args);
+    if(!$userDao)
+      {
+      throw new Exception('You must login to request curation approval for a folder.', 401);
+      }
+
+    $this->_checkKeys(array('folder_id'), $args);
+    $folderModel = MidasLoader::loadModel('Folder');
+    $folderDao = $folderModel->load($args['folder_id']);
+    if(!$folderDao)
+      {
+      throw new Exception('No folder found with that id.', 404);
+      }
+    if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
+      {
+      throw new Exception("Admin permissions required on the folder.", 401);
+      }
+
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    if(array_key_exists('message', $args))
+      {
+      $message = $args['message'];
+      }
+    else
+      {
+      $message = false;
+      }
+    $curatedfolderModel->requestCurationApproval($folderDao, $message);
     return "OK";
     }
 

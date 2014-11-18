@@ -22,6 +22,8 @@
 require_once BASE_PATH.'/modules/curate/constant/module.php';
 class ApiControllerTest extends ControllerTestCase
   {
+
+
   /** set up tests */
   public function setUp()
     {
@@ -68,6 +70,7 @@ class ApiControllerTest extends ControllerTestCase
     $userApiModel->createDefaultApiKey($userDao);
     $apiKey = $userApiModel->getByAppAndUser('Default', $userDao)->getApikey();
 
+    $this->resetAll();
     $this->params['method'] = 'midas.login';
     $this->params['email'] = $usersFile[0]->getEmail();
     $this->params['appname'] = 'Default';
@@ -96,7 +99,7 @@ class ApiControllerTest extends ControllerTestCase
     $userApiModel->createDefaultApiKey($userDao);
     $apiKey = $userApiModel->getByAppAndUser('Default', $userDao)->getApikey();
 
-    $this->resetAll(); 
+    $this->resetAll();
     $this->params['method'] = 'midas.login';
     $this->params['email'] = $usersFile[0]->getEmail();
     $this->params['appname'] = 'Default';
@@ -201,13 +204,13 @@ class ApiControllerTest extends ControllerTestCase
     $enableCurationApiMethod = 'midas.curate.enable.curation';
     $httpMethod = 'POST';
 
-    // basic validation on enableCuration 
+    // basic validation on enableCuration
     $this->_requireValidSession($enableCurationApiMethod, $httpMethod);
     $this->_requireValidFolderId($enableCurationApiMethod, $httpMethod);
     $this->_requireFolderAdminAccess($enableCurationApiMethod, $httpMethod);
-     
+
     $this->resetAll();
-    $userToken = $this->_loginUsingApiKey(); 
+    $userToken = $this->_loginUsingApiKey();
     // folder is tracked under curation and curation status is construction
     $this->resetAll();
     $this->params['method'] = $enableCurationApiMethod;
@@ -244,7 +247,7 @@ class ApiControllerTest extends ControllerTestCase
 
     $disableCurationApiMethod = 'midas.curate.disable.curation';
 
-    // basic validation on disableCuration 
+    // basic validation on disableCuration
     $this->_requireValidSession($disableCurationApiMethod, $httpMethod);
     $this->_requireValidFolderId($disableCurationApiMethod, $httpMethod);
     $this->_requireFolderAdminAccess($disableCurationApiMethod, $httpMethod);
@@ -295,9 +298,43 @@ class ApiControllerTest extends ControllerTestCase
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
     $curationModeratorDaos = $moderatorModel->findBy('user_id', 1);
     $this->assertNotEquals(count($curationModeratorDaos), 0);
-
-    // TODO check that there is only one DAO created
-
-
     }
+
+  /** test requestCurationApproval */
+  public function testRequestCurationApproval()
+    {
+    $requestCurationApprovalApiMethod = 'midas.curate.request.approval';
+    $httpMethod = 'POST';
+
+    // basic validation
+    $this->_requireValidSession($requestCurationApprovalApiMethod, $httpMethod);
+    $this->_requireValidFolderId($requestCurationApprovalApiMethod, $httpMethod);
+    $this->_requireAdminAccess($requestCurationApprovalApiMethod, $httpMethod);
+
+    $userToken = $this->_loginUsingApiKey();
+
+    // ensure the folder is curated and in the CONSTRUCTED state
+    $folderModel = MidasLoader::loadModel('Folder');
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $folderDao = $folderModel->load(1000);
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+    $loadedCuratedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
+
+    $this->resetAll();
+    $this->params['method'] = $requestCurationApprovalApiMethod;
+    $this->params['token'] = $userToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $this->params['message'] = 'my message';
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+
+    // ensure it has the correct state
+    $loadedCuratedfolderDao = $curatedfolderModel->load($loadedCuratedfolderDao->getCuratedfolderId());
+    $this->assertEquals($loadedCuratedfolderDao->getCurationState(), CURATE_STATE_REQUESTED);
+
+    // leave the curated folder in a clean state
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+    }
+
  }

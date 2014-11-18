@@ -33,12 +33,11 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       'curatedfolder_id' => array('type' => MIDAS_DATA),
       'folder_id' => array('type' => MIDAS_DATA),
       'curation_state' => array('type' => MIDAS_DATA),
-      'creation_date' => array('type' => MIDAS_DATA));
-/*,
-      'folder' =>  array('type' => MIDAS_ONE_TO_ONE,
+      'creation_date' => array('type' => MIDAS_DATA),
+      'folder' =>  array('type' => MIDAS_MANY_TO_ONE,
                        'model' => 'Folder',
                        'parent_column' => 'folder_id',
-                       'child_column' => 'folder_id')*/
+                       'child_column' => 'folder_id'));
     $this->initialize();
     }
 
@@ -91,6 +90,67 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       return true;
       }
     }
+
+  /** sends a notifcation email to all curation moderators requesting
+   * curation approval for the passed in folder, including the passed in
+   * message if it is set.  sends a notification email to all users with
+   * admin access to the folder alerting them to the request.
+   * sets the curation status of the folder to requested.
+   * returns the curatedfolderDao.
+   */
+  function requestCurationApproval($folderDao, $message = false)
+    {
+    if(is_null($folderDao))
+      {
+      throw new Exception('Non-null folder required to request curation approval.', -1);
+      }
+    $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
+    if(count($curatedfolderDaos) ==  0)
+      {
+      throw new Exception('folder must be tracked by curation to request curation approval.', -1);
+      }
+    else
+      {
+      $curatedfolderDao = $curatedfolderDaos[0];
+      $curatedfolderDao->setCurationState(CURATE_STATE_REQUESTED);
+      $this->save($curatedfolderDao);
+
+      // get all users that are admin
+      $userModel = MidasLoader::loadModel('User');
+      $adminDaos = $userModel->findBy('admin', '1');
+
+      $moderators = array();
+      foreach($adminDaos as $admin)
+        {
+        $moderators[$admin->getUserId()] = $admin;
+        }
+
+      // combine with all admins with those that are moderators
+      $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
+      $curationModeratorDaos = $curationModeratorModel->getAll();
+      foreach($curationModeratorDaos as $curationModerator)
+        {
+        $moderatorUser = $curationModerator->getUser();//getUserId());
+        $moderators[$moderatorUser->getUserId()] = $moderatorUser;
+        }
+
+      // notify all in combined list
+      $utilityComponent = MidasLoader::loadComponent('Utility');
+      $body = "Hello Midas Curation Moderator,\nThe curated folder ".$folderDao->getName()." has been requested for curation approval.\n";
+      if(false != $message)
+        {
+        $body = $body . $message;
+        }
+      foreach($moderators as $userId => $moderator)
+        {
+        $utilityComponent->sendEmail($moderator->getEmail(), 'Curation Approval Request', $body);
+        }
+
+      return $curatedfolderDao;
+      }
+    }
+
+
 
 
   }

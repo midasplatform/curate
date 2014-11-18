@@ -19,8 +19,22 @@
 =========================================================================*/
 
 require_once BASE_PATH.'/modules/curate/models/base/ModeratorModelBase.php';
+require_once BASE_PATH.'/modules/curate/models/dao/ModeratorDao.php';
 
 /** PDO model template for the curate module */
 class Curate_ModeratorModel extends Curate_ModeratorModelBase
   {
+
+  /** get All */
+  public function getAll()
+    {
+    $rowset = $this->database->fetchAll($this->database->select()->order(array('moderator_id')));
+    $results = array();
+    foreach($rowset as $row)
+      {
+      $results[] = $this->initDao('Moderator', $row, 'curate');
+      }
+    return $results;
+    }
+
   }

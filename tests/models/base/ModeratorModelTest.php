@@ -33,7 +33,7 @@ class ModeratorModelTest extends DatabaseTestCase
     parent::setUp();
     }
 
-  /** testEnableAndDisableFolderCuration*/
+  /** testEmpowerCurationModerator*/
   public function testEmpowerCurationModerator()
     {
     $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
@@ -42,6 +42,11 @@ class ModeratorModelTest extends DatabaseTestCase
     // load the dao from the db and ensure it exists
     $curationModeratorDao = $curationModeratorModel->load($curationModeratorDao->getModeratorId());
     $this->assertEquals($userDao->getUserId(), $curationModeratorDao->getUserId(), 'curation moderator and user id do not match');
+
+    // empower same user and make sure we aren't creating multiple rows in the table
+    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
+    $curationModeratorDaos = $curationModeratorModel->findBy('user_id', $curationModeratorDao->getModeratorId());
+    $this->assertEquals(count($curationModeratorDaos), 1, "too many curation moderator rows created");
     }
 
   }

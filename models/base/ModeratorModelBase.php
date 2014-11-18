@@ -31,7 +31,7 @@ abstract class Curate_ModeratorModelBase extends Curate_AppModel
       'moderator_id' => array('type' => MIDAS_DATA),
       'user_id' => array('type' => MIDAS_DATA),
       'creation_date' => array('type' => MIDAS_DATA),
-      'user' =>  array('type' => MIDAS_ONE_TO_ONE,
+      'user' =>  array('type' => MIDAS_MANY_TO_ONE,
                        'model' => 'User',
                        'parent_column' => 'user_id',
                        'child_column' => 'user_id'));
@@ -43,9 +43,17 @@ abstract class Curate_ModeratorModelBase extends Curate_AppModel
    */
   function empowerCurationModerator($userDao)
     {
+    // if already a moderator, return that moderator rather than creating a new one
+    $moderatorDaos = $this->findBy('user_id', $userDao->getUserId());
+    if(count($moderatorDaos) > 0)
+      {
+      return $moderatorDaos[0];
+      }
+
     $curationModeratorDao = MidasLoader::newDao('ModeratorDao', 'curate');
     $curationModeratorDao->setUserId($userDao->getUserId());
     $this->save($curationModeratorDao);
+
     return $curationModeratorDao;
     }
 
