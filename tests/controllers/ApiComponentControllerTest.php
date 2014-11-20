@@ -432,6 +432,10 @@ class ApiControllerTest extends ControllerTestCase
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
     $this->assertEquals($resp->data, "OK", "approving curation with a moderator should have succeeded.");
+    // check that curation status is correct
+    $curatedfolderDaos = $curatedfolderModel->findBy('folder_id', $folderDao->getFolderId());
+    $curatedfolderDao = $curatedfolderDaos[0];
+    $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_APPROVED, "approved folder in incorrect curation state.");
 
     // reset the folder to requested and ensure sucess with admin
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
@@ -446,6 +450,10 @@ class ApiControllerTest extends ControllerTestCase
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
     $this->assertEquals($resp->data, "OK", "approving curation with a admin should have succeeded.");
+    // check that curation status is correct
+    $curatedfolderDaos = $curatedfolderModel->findBy('folder_id', $folderDao->getFolderId());
+    $curatedfolderDao = $curatedfolderDaos[0];
+    $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_APPROVED, "approved folder in incorrect curation state.");
 
     // leave the folder in an untracked state regarding curation
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
