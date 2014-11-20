@@ -61,10 +61,10 @@ class ApiControllerTest extends ControllerTestCase
     }
 
   /** Authenticate using the default api key */
-  private function _loginUsingApiKey()
+  private function _loginUsingApiKey($userIndex = 0)
     {
     $usersFile = $this->loadData('User', 'default');
-    $userDao = $this->User->load($usersFile[0]->getKey());
+    $userDao = $this->User->load($usersFile[$userIndex]->getKey());
 
     $userApiModel = MidasLoader::loadModel('Userapi');
     $userApiModel->createDefaultApiKey($userDao);
@@ -72,7 +72,7 @@ class ApiControllerTest extends ControllerTestCase
 
     $this->resetAll();
     $this->params['method'] = 'midas.login';
-    $this->params['email'] = $usersFile[0]->getEmail();
+    $this->params['email'] = $usersFile[$userIndex]->getEmail();
     $this->params['appname'] = 'Default';
     $this->params['apikey'] = $apiKey;
     $this->request->setMethod('POST');
@@ -336,5 +336,120 @@ class ApiControllerTest extends ControllerTestCase
     // leave the curated folder in a clean state
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
     }
+
+  /** test approveCuration */
+  public function testApproveCuration()
+    {
+    $approveCurationApiMethod = 'midas.curate.approve.curation';
+    $httpMethod = 'POST';
+
+    // basic validation
+    $this->_requireValidSession($approveCurationApiMethod, $httpMethod);
+    $this->_requireValidFolderId($approveCurationApiMethod, $httpMethod);
+
+    // do not track the folder under curation
+    $folderModel = MidasLoader::loadModel('Folder');
+    $folderDao = $folderModel->load(1000);
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+
+    $nonmoderatorToken = $this->_loginUsingApiKey(1);
+    // should fail since user is not a moderator
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $nonmoderatorToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 401);
+
+    // ensure user index 0 is a moderator
+    $usersFile = $this->loadData('User', 'default');
+    $moderatorDao = $this->User->load($usersFile[0]->getKey());
+    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
+    $curationModeratorDao = $moderatorModel->empowerCurationModerator($moderatorDao);
+
+    // use a moderator, should fail because the folder is not under curation
+    $moderatorToken = $this->_loginUsingApiKey();
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $moderatorToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 404);
+
+    // use an admin, should fail because the folder is not under curation
+    $adminToken = $this->_loginUsingApiKeyAsAdmin();
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $adminToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 404);
+
+    // track the folder under curation
+    $loadedCuratedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
+
+    // use a moderator, should fail because the folder is not under curation
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $moderatorToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 404);
+
+    // use an admin, should fail because the folder is not under curation
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $adminToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 404);
+
+    // set the curated folder to the requested state
+    $loadedCuratedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+
+    // try again with a non-moderator, should still fail
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $nonmoderatorToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusFailed($resp, 401);
+
+    // try again with moderator, should succeed
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $moderatorToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $this->params['message'] = 'my message';
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+    $this->assertEquals($resp->data, "OK", "approving curation with a moderator should have succeeded.");
+
+    // reset the folder to requested and ensure sucess with admin
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+    $loadedCuratedfolderDao = $curatedfolderModel->enableFolderCuration($folderDao);
+    $loadedCuratedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+    $this->resetAll();
+    $this->params['method'] = $approveCurationApiMethod;
+    $this->params['token'] = $adminToken;
+    $this->request->setMethod($httpMethod);
+    $this->params['folder_id'] = 1000;
+    $this->params['message'] = 'my message';
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+    $this->assertEquals($resp->data, "OK", "approving curation with a admin should have succeeded.");
+
+    // leave the folder in an untracked state regarding curation
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
+  }
+
 
  }

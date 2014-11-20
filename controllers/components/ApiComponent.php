@@ -158,7 +158,70 @@ class Curate_ApiComponent extends AppComponent
     } else {
       $message = false;
       }
-    $curatedfolderModel->requestCurationApproval($folderDao, $message);
+    try {
+      $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao, $message);
+    } catch (Exception $e) {
+      // if we fail for any other reason with a -1, return a 404
+      if ($e->getCode() == -1) {
+        throw new Exception($e->getMessage(), 404);
+      }
+    }
+
+    return "OK";
+    }
+
+  /**
+   * Approve a curation request for a curated folder.  Will email all users
+   * with direct Admin access to the folder (not via a group) with a notification,
+   * and will set the curated folder to the state of APPROVED; calling user
+   * must be a site admin or curation moderator.
+   * @param folder_id id of the folder to approve a curation request for.
+   * @param message optional message to include in the email.
+   * @return "OK" on success
+   */
+  public function approveCuration($args)
+    {
+    $userDao = $this->_getUser($args);
+    if (!$userDao) {
+      throw new Exception('You must login to approve a curation request for a folder.', 401);
+      }
+
+    $this->_checkKeys(array('folder_id'), $args);
+    $folderModel = MidasLoader::loadModel('Folder');
+    $folderDao = $folderModel->load($args['folder_id']);
+    if (!$folderDao) {
+      throw new Exception('No folder found with that id.', 404);
+      }
+
+    $userDao = $this->_getUser($args);
+    if (!$userDao) {
+      throw new Exception('You must login to approve a curation request for a folder.', 401);
+      }
+
+    // require site admin or curation moderator
+    if (!$userDao->getAdmin()) {
+      $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
+      $moderatorDao = $moderatorModel->load($userDao->getUserId());
+      if (false == $moderatorDao) {
+        throw new Exception('You must be a site admin or curation moderator to approve a curation request for a folder.', 401);
+      }
+    }
+
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    if (array_key_exists('message', $args)) {
+      $message = $args['message'];
+    } else {
+      $message = false;
+    }
+    try {
+      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao, $message);
+    } catch (Exception $e) {
+      // if we fail for any other reason with a -1, return a 404
+      if ($e->getCode() == -1) {
+        throw new Exception($e->getMessage(), 404);
+      }
+    }
+
     return "OK";
     }
 

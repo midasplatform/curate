@@ -143,6 +143,68 @@ class CuratedfolderModelTest extends DatabaseTestCase
     $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     }
 
+  /** testApproveCurationRequest*/
+  public function testApproveCurationRequest()
+    {
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+
+    // test approving a null folderDao
+    $folderDao = null;
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
+      $this->fail('Should have failed calling approveCurationRequest on null folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    $folderDao = $this->Folder->load(1000);
+    // ensure this folder is not tracked for curation
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    // approve a folder that isn't tracked under curation
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
+      $this->fail('Should have failed calling approveCurationRequest on untracked folder');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    $enabled = $curatedfolderModel->enableFolderCuration($folderDao);
+
+    // empower a user as a curation moderator
+    $userModel = MidasLoader::loadModel('User');
+    $userDao = $userModel->load(1);
+    $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
+    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
+
+    // approve a folder that isn't in the requested state
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
+      $this->fail('Should have failed calling approveCurationRequest on folder not in requested state.');
+      }
+    catch(Exception $e)
+      {
+      $this->assertEquals(-1, $e->getCode());
+      }
+
+    // set the folder to the requested state
+    $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+
+    // now approve it
+    $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
+    $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
+    $this->assertEquals($curatedfolderDao->getCurationState(), CURATE_STATE_APPROVED);
+
+    // ensure this folder is not tracked for curation
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    }
+
 
 
   }
