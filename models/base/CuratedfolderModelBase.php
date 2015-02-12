@@ -208,5 +208,16 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       }
     }
 
+  /**
+   * lists all of the curated folders that a user has Read access to.
+   */
+  function listAllCuratedFolders($userDao)
+    {
+    $curatedfolderDaos = $this->getAll($userDao);
+    return $curatedfolderDaos;
+    }
+
+
+
 
   }

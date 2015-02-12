@@ -205,6 +205,56 @@ class CuratedfolderModelTest extends DatabaseTestCase
     $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     }
 
+  /** testListAllCuratedFolders */
+  public function testListAllCuratedFolders()
+    {
+    // load some folders and enable them for curation
+    $folderDao = $this->Folder->load(1000);
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $enabled = $curatedfolderModel->enableFolderCuration($folderDao);
 
+    $userModel = MidasLoader::loadModel('User');
+    $userDao = $userModel->load(1);
+    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
+    $found = false;
+    foreach($curatedFolders as $curated)
+      {
+      if($curated->getFolderId() == 1000)
+        {
+        $found = true;
+        $this->assertEquals($curated->getCurationState(), CURATE_STATE_CONSTRUCTION);
+        }
+      }
+    $this->assertTrue($found, 'did not find expected curated folder');
+
+    $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
+    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
+    $found = false;
+    foreach($curatedFolders as $curated)
+      {
+      if($curated->getFolderId() == 1000)
+        {
+        $found = true;
+        $this->assertEquals($curated->getCurationState(), CURATE_STATE_REQUESTED);
+        }
+      }
+    $this->assertTrue($found, 'did not find expected curated folder');
+
+    $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
+    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
+    $found = false;
+    foreach($curatedFolders as $curated)
+      {
+      if($curated->getFolderId() == 1000)
+        {
+        $found = true;
+        $this->assertEquals($curated->getCurationState(), CURATE_STATE_APPROVED);
+        }
+      }
+    $this->assertTrue($found, 'did not find expected curated folder');
+
+    // ensure this folder is not tracked for curation
+    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
+    }
 
   }
