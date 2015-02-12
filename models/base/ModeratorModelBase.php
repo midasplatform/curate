@@ -45,7 +45,8 @@ abstract class Curate_ModeratorModelBase extends Curate_AppModel
     {
     // if already a moderator, return that moderator rather than creating a new one
     $moderatorDaos = $this->findBy('user_id', $userDao->getUserId());
-    if (count($moderatorDaos) > 0) {
+    if(count($moderatorDaos) > 0)
+      {
       return $moderatorDaos[0];
       }
 

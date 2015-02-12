@@ -28,8 +28,10 @@ class Curate_ApiComponent extends AppComponent
    */
   private function _checkKeys($keys, $values)
     {
-    foreach ($keys as $key) {
-      if (!array_key_exists($key, $values)) {
+    foreach($keys as $key)
+      {
+      if(!array_key_exists($key, $values))
+        {
         throw new Exception('Parameter '.$key.' must be set.', 400);
         }
       }
@@ -53,17 +55,20 @@ class Curate_ApiComponent extends AppComponent
   public function enableCuration($args)
     {
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to enable curation on a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
     $folderDao = $folderModel->load($args['folder_id']);
-    if (!$folderDao) {
+    if(!$folderDao)
+      {
       throw new Exception('No folder found with that id.', 404);
       }
-    if (!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE)) {
+    if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
+      {
       throw new Exception("Admin permissions required on the folder.", 401);
       }
 
@@ -82,17 +87,20 @@ class Curate_ApiComponent extends AppComponent
   public function disableCuration($args)
     {
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to disable curation on a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
     $folderDao = $folderModel->load($args['folder_id']);
-    if (!$folderDao) {
+    if(!$folderDao)
+      {
       throw new Exception('No folder found with that id.', 404);
       }
-    if (!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE)) {
+    if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
+      {
       throw new Exception("Admin permissions required on the folder.", 401);
       }
 
@@ -110,17 +118,20 @@ class Curate_ApiComponent extends AppComponent
   public function empowerModerator($args)
     {
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to empower a curation moderator.', 401);
       }
-    if (!$userDao->getAdmin()) {
+    if(!$userDao->getAdmin())
+      {
       throw new Exception('You must be a site admin to empower a curation moderator.', 401);
       }
 
     $this->_checkKeys(array('user_id'), $args);
     $userModel = MidasLoader::loadModel('User');
     $empoweredUserDao = $userModel->load($args['user_id']);
-    if (!$empoweredUserDao) {
+    if(!$empoweredUserDao)
+      {
       throw new Exception('No user found with that id.', 404);
       }
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
@@ -138,34 +149,44 @@ class Curate_ApiComponent extends AppComponent
   public function requestApproval($args)
     {
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to request curation approval for a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
     $folderDao = $folderModel->load($args['folder_id']);
-    if (!$folderDao) {
+    if(!$folderDao)
+      {
       throw new Exception('No folder found with that id.', 404);
       }
-    if (!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE)) {
+    if(!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE))
+      {
       throw new Exception("Admin permissions required on the folder.", 401);
       }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
-    if (array_key_exists('message', $args)) {
+    if(array_key_exists('message', $args))
+      {
       $message = $args['message'];
-    } else {
+      }
+    else
+      {
       $message = false;
       }
-    try {
+    try
+      {
       $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao, $message);
-    } catch (Exception $e) {
-      // if we fail for any other reason with a -1, return a 404
-      if ($e->getCode() == -1) {
-        throw new Exception($e->getMessage(), 404);
       }
-    }
+    catch(Exception $e)
+      {
+      // if we fail for any other reason with a -1, return a 404
+      if($e->getCode() == -1)
+        {
+        throw new Exception($e->getMessage(), 404);
+        }
+      }
 
     return "OK";
     }
@@ -182,45 +203,57 @@ class Curate_ApiComponent extends AppComponent
   public function approveCuration($args)
     {
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to approve a curation request for a folder.', 401);
       }
 
     $this->_checkKeys(array('folder_id'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
     $folderDao = $folderModel->load($args['folder_id']);
-    if (!$folderDao) {
+    if(!$folderDao)
+      {
       throw new Exception('No folder found with that id.', 404);
       }
 
     $userDao = $this->_getUser($args);
-    if (!$userDao) {
+    if(!$userDao)
+      {
       throw new Exception('You must login to approve a curation request for a folder.', 401);
       }
 
     // require site admin or curation moderator
-    if (!$userDao->getAdmin()) {
+    if(!$userDao->getAdmin())
+      {
       $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
       $moderatorDao = $moderatorModel->load($userDao->getUserId());
-      if (false == $moderatorDao) {
+      if(false == $moderatorDao)
+        {
         throw new Exception('You must be a site admin or curation moderator to approve a curation request for a folder.', 401);
+        }
       }
-    }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
-    if (array_key_exists('message', $args)) {
+    if(array_key_exists('message', $args))
+      {
       $message = $args['message'];
-    } else {
-      $message = false;
-    }
-    try {
-      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao, $message);
-    } catch (Exception $e) {
-      // if we fail for any other reason with a -1, return a 404
-      if ($e->getCode() == -1) {
-        throw new Exception($e->getMessage(), 404);
       }
-    }
+    else
+      {
+      $message = false;
+      }
+    try
+      {
+      $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao, $message);
+      }
+    catch(Exception $e)
+      {
+      // if we fail for any other reason with a -1, return a 404
+      if($e->getCode() == -1)
+        {
+        throw new Exception($e->getMessage(), 404);
+        }
+      }
 
     return "OK";
     }

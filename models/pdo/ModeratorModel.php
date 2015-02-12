@@ -30,7 +30,8 @@ class Curate_ModeratorModel extends Curate_ModeratorModelBase
     {
     $rowset = $this->database->fetchAll($this->database->select()->order(array('moderator_id')));
     $results = array();
-    foreach ($rowset as $row) {
+    foreach($rowset as $row)
+      {
       $results[] = $this->initDao('Moderator', $row, 'curate');
       }
     return $results;
