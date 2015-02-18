@@ -30,7 +30,6 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
    */
   function getAll($userDao)
     {
-
     if($userDao == null)
       {
       $userId = -1;
@@ -48,30 +47,33 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
       }
     else
       {
-      $policy = MIDAS_POLICY_READ;
-      // if the user has access from any folderpolicyuser
-      $subqueryUser = $this->database->select()->setIntegrityCheck(false)->from(
-          array('cf' => 'curate_curatedfolder'))
-          ->join(array('f' => 'folder'), 'cf.folder_id = f.folder_id', array())
-          ->join(array('fpu' => 'folderpolicyuser'), 'fpu.folder_id = f.folder_id', array())
-          ->where("fpu.user_id = ? and fpu.policy >= ?", $userId, $policy);
-      // or if the user has access from any folderpolicygroup from the user's groups
-      // or if the folder is public (has a folderpolicygroup in the Anonymous group)
-      $subqueryGroup = $this->database->select()->setIntegrityCheck(false)->from(
-          array('cf' => 'curate_curatedfolder'))
-          ->join(array('f' => 'folder'), 'cf.folder_id = f.folder_id', array())
-          ->join(array('fpg' => 'folderpolicygroup'), 'fpg.folder_id = f.folder_id', array())
-          ->where("fpg.group_id = ?", MIDAS_GROUP_ANONYMOUS_KEY)
-          ->orWhere('fpg.group_id IN ('.new Zend_Db_Expr(
-            $this->database->select()->setIntegrityCheck(false)->from(
-                array('u2g' => 'user2group'),
-                array('group_id')
-            )->where('u2g.user_id = ?', $userId).')'));
+      $selectFolderpolicyuser = $this->database->select()->from('curate_curatedfolder')
+                ->join('folder',
+                       'folder.folder_id = curate_curatedfolder.folder_id',
+                        array())
+                ->join('folderpolicyuser',
+                       'folderpolicyuser.folder_id = folder.folder_id',
+                        array())
+                ->where('folderpolicyuser.user_id = ?', $userId)
+                ->where('folderpolicyuser.policy >= ?', MIDAS_POLICY_READ);
+      $selectFolderpolicygroup = $this->database->select()->from('curate_curatedfolder')
+                ->join('folder',
+                       'folder.folder_id = curate_curatedfolder.folder_id',
+                        array())
+                ->join('folderpolicygroup',
+                       'folderpolicygroup.folder_id = folder.folder_id',
+                        array())
+                ->where('folderpolicygroup.policy >= ?', MIDAS_POLICY_READ)
+                ->where("folderpolicygroup.group_id = ?", MIDAS_GROUP_ANONYMOUS_KEY)
+                ->orWhere('folderpolicygroup.group_id IN ('.new Zend_Db_Expr(
+                    $this->database->select()->setIntegrityCheck(false)->from(
+                           array('u2g' => 'user2group'),
+                           array('group_id')
+                    )->where('u2g.user_id = ?', $userId).')'));
 
-      $sql = $this->database->select()->union(array($subqueryUser, $subqueryGroup));
+      $sql = $this->database->select()->union(array($selectFolderpolicyuser, $selectFolderpolicygroup));
       }
-    $rowset = $this->database->fetchAll($this->database->select());
-
+    $rowset = $this->database->fetchAll($sql);
     $all = array();
     foreach($rowset as $row)
       {

@@ -205,56 +205,120 @@ class CuratedfolderModelTest extends DatabaseTestCase
     $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     }
 
+
+  /** _trackUserReadFolders */
+  public function _trackUserReadFolders($folder, $userReadFolders, $policies)
+    {
+    foreach($policies as $userInd => $policy)
+      {
+      if($policy)
+        {
+        $userReadFolders[$userInd][] = $folder;
+        }
+      }
+    return $userReadFolders;
+    }
+
+  /** _ensureReadPolicy */
+  public function _ensureReadPolicy($folder, $users, $policies)
+    {
+    foreach($policies as $ind => $policy)
+      {
+      //echo "ind:".$ind.' policy:'.$policy.' folder:'.$folder->getName();
+      $this->assertEquals($policies[$ind], $this->Folder->policyCheck($folder, $users[$ind], MIDAS_POLICY_READ));
+      }
+    }
+
   /** testListAllCuratedFolders */
   public function testListAllCuratedFolders()
     {
-    // load some folders and enable them for curation
-    $folderDao = $this->Folder->load(1000);
-    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
-    $enabled = $curatedfolderModel->enableFolderCuration($folderDao);
-
     $userModel = MidasLoader::loadModel('User');
-    $userDao = $userModel->load(1);
-    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
-    $found = false;
-    foreach($curatedFolders as $curated)
+    // first user is empty, for anonymous access
+    $users = array();
+    $users[] = null;
+    foreach(range(1,3) as $userId)
       {
-      if($curated->getFolderId() == 1000)
+      $users[] = $userModel->load($userId);
+      }
+
+    $userReadFolders = array();
+    foreach(range(0,3) as $userInd)
+      {
+      $userReadFolders[] = array();
+      }
+
+    // folder 1 is read for user 3
+    $folder1 = $this->Folder->createFolder('curateFolder1', '', -1);
+    $policies = array(false, false, false, true);
+    $userReadFolders = $this->_trackUserReadFolders($folder1, $userReadFolders, $policies);
+    $this->_ensureReadPolicy($folder1, $users, $policies);
+
+    // folder 2 is read for user 3
+    // folder 2 is read for user 1 by folderpolicyuser
+    $folder2 = $this->Folder->createFolder('curateFolder2', '', -1);
+    $policies = array(false, true, false, true);
+    $userReadFolders = $this->_trackUserReadFolders($folder2, $userReadFolders, $policies);
+    $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
+    $folderpolicyuserModel->createPolicy($users[1], $folder2, MIDAS_POLICY_READ);
+    $this->_ensureReadPolicy($folder2, $users, $policies);
+
+    // folder 3 is read for user 3
+    // folder 3 is read for user 2 by folderpolicygroup
+    $folder3 = $this->Folder->createFolder('curateFolder3', '', -1);
+    $policies = array(false, false, true, true);
+    $userReadFolders = $this->_trackUserReadFolders($folder3, $userReadFolders, $policies);
+    // create a group tied to a community
+    $communityModel = MidasLoader::loadModel('Community');
+    $community = $communityModel->load(2000);
+    $groupModel = MidasLoader::loadModel('Group');
+    $group = $groupModel->createGroup($community, 'folder3readgroup');
+    $folderpolicygroupModel = MidasLoader::loadModel('Folderpolicygroup');
+    $groupModel->addUser($group, $users[2]);
+    $folderpolicygroupModel->createPolicy($group, $folder3, MIDAS_POLICY_READ);
+    $this->_ensureReadPolicy($folder3, $users, $policies);
+
+    // folder 4 is read for all users because of anonymous group
+    $folder4 = $this->Folder->createFolder('curateFolder4', '', -1);
+    $policies = array(true, true, true, true);
+    $userReadFolders = $this->_trackUserReadFolders($folder4, $userReadFolders, $policies);
+    $anonGroup = $groupModel->load(MIDAS_GROUP_ANONYMOUS_KEY);
+    $folderpolicygroupModel->createPolicy($anonGroup, $folder4, MIDAS_POLICY_READ);
+    $this->_ensureReadPolicy($folder4, $users, $policies);
+
+    // enable all folders for curation
+    $folders = array($folder1, $folder2, $folder3, $folder4);
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    foreach($folders as $folder)
+      {
+      $enabled = $curatedfolderModel->enableFolderCuration($folder);
+      }
+
+    // check that each user sees the correct curation folders
+    foreach($users as $userInd => $user)
+      {
+      $expectedFoldersForUser = $userReadFolders[$userInd];
+      $curatedFolders = $curatedfolderModel->listAllCuratedFolders($user);
+      $this->assertEquals(count($expectedFoldersForUser), count($curatedFolders), "Expected folders and curated folders differ in count");
+      foreach($expectedFoldersForUser as $expectedFolder)
         {
-        $found = true;
-        $this->assertEquals($curated->getCurationState(), CURATE_STATE_CONSTRUCTION);
+        $found = false;
+        foreach($curatedFolders as $curatedFolder)
+          {
+          if($expectedFolder->getFolderId() == $curatedFolder->getFolderId())
+            {
+            $found = true;
+            }
+          }
+        $this->assertTrue($found, "Did not find a match in the curated folders for expected folder with id ".$curatedFolder->getFolderId());
         }
       }
-    $this->assertTrue($found, 'did not find expected curated folder');
 
-    $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
-    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
-    $found = false;
-    foreach($curatedFolders as $curated)
+    // disable all folders for curation
+    foreach($folders as $folder)
       {
-      if($curated->getFolderId() == 1000)
-        {
-        $found = true;
-        $this->assertEquals($curated->getCurationState(), CURATE_STATE_REQUESTED);
-        }
+      $enabled = $curatedfolderModel->disableFolderCuration($folder);
       }
-    $this->assertTrue($found, 'did not find expected curated folder');
 
-    $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao);
-    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
-    $found = false;
-    foreach($curatedFolders as $curated)
-      {
-      if($curated->getFolderId() == 1000)
-        {
-        $found = true;
-        $this->assertEquals($curated->getCurationState(), CURATE_STATE_APPROVED);
-        }
-      }
-    $this->assertTrue($found, 'did not find expected curated folder');
-
-    // ensure this folder is not tracked for curation
-    $disabled = $curatedfolderModel->disableFolderCuration($folderDao);
     }
 
   }
