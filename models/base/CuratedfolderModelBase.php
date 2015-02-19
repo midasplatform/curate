@@ -208,6 +208,7 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       }
       $stats['folder_id'] = $folder->getFolderId();
       $stats['name'] = $folder->getName();
+      $stats['curation_state'] = $curatedfolder->getCurationState();
       $folderStats[] = $stats;
     }
     return $folderStats;

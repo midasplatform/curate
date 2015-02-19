@@ -217,5 +217,20 @@ class Curate_ApiComponent extends AppComponent {
     return "OK";
   }
 
+  /**
+   * List all curated Folders that the passed in user has Read access to,
+   * along with the sum of sizes and download counts for all Items in
+   * the Folder subtree rooted at the Folder tracked as a Curatedfolder.
+   * @return TODO the structure of the return object
+   */
+  public function listAllCuratedFolders($args) {
+    $userDao = $this->_getUser($args);
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao);
+    return $curatedFolders;
+  }
+
+
+
 
 } // end class

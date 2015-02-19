@@ -365,6 +365,7 @@ class CuratedfolderModelTest extends DatabaseTestCase
             // check that stats are correct
             $this->assertEquals($expectedFolderStats[$curatedFolder['folder_id']]['download'], $curatedFolder['download'], "Did not find expected download value for curated folder with folder_id ".$curatedFolder['folder_id']);
             $this->assertEquals($expectedFolderStats[$curatedFolder['folder_id']]['size'], $curatedFolder['size'], "Did not find expected size value for curated folder with folder_id ".$curatedFolder['folder_id']);
+            $this->assertEquals($curatedFolder['curation_state'], CURATE_STATE_CONSTRUCTION, "Did not find expected curation_state for curated folder with folder_id ".$curatedFolder['folder_id']);
             }
           }
         $this->assertTrue($found, "Did not find a match in the curated folders for expected folder with id ".$curatedFolder['folder_id']);
