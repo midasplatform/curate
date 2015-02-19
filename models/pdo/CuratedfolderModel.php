@@ -26,9 +26,9 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
   {
 
   /**
-   * gets all curatedfolders a user has Read access to
+   * gets all curatedfolders a user has access to with the given policy
    */
-  function getAll($userDao)
+  function getAllFiltered($userDao, $policy)
     {
     if($userDao == null)
       {
@@ -55,7 +55,7 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
                        'folderpolicyuser.folder_id = folder.folder_id',
                         array())
                 ->where('folderpolicyuser.user_id = ?', $userId)
-                ->where('folderpolicyuser.policy >= ?', MIDAS_POLICY_READ);
+                ->where('folderpolicyuser.policy >= ?', $policy);
       $selectFolderpolicygroup = $this->database->select()->from('curate_curatedfolder')
                 ->join('folder',
                        'folder.folder_id = curate_curatedfolder.folder_id',
@@ -63,7 +63,7 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
                 ->join('folderpolicygroup',
                        'folderpolicygroup.folder_id = folder.folder_id',
                         array())
-                ->where('folderpolicygroup.policy >= ?', MIDAS_POLICY_READ)
+                ->where('folderpolicygroup.policy >= ?', $policy)
                 ->where("folderpolicygroup.group_id = ?", MIDAS_GROUP_ANONYMOUS_KEY)
                 ->orWhere('folderpolicygroup.group_id IN ('.new Zend_Db_Expr(
                     $this->database->select()->setIntegrityCheck(false)->from(
@@ -81,4 +81,46 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
       }
     return $all;
     }
+
+   /**
+    * Get the total download counts for all items in a folder's subtree,
+    * (with no filtered results).
+    *
+    * @param FolderDao $folder
+    * @return string
+    * @throws Zend_Exception
+    */
+   public function getFolderDownloadCounts($folder)
+     {
+     if (!$folder instanceof FolderDao)
+       {
+       throw new Zend_Exception("Input should be a FolderDao");
+       }
+     $folders = $this->database->select()->setIntegrityCheck(false)->from(
+        array('f' => 'folder'),
+        array('folder_id')
+     )->where(
+        'left_index > ?',
+        $folder->getLeftIndex()
+     )->where('right_index < ?', $folder->getRightIndex());
+
+     $sql = $this->database->select()->distinct()->setIntegrityCheck(false)->from(array('i' => 'item'))->join(
+        array('i2f' => 'item2folder'),
+        '( '.$this->database->getDB()->quoteInto('i2f.folder_id IN (?)', $folders).'
+             OR i2f.folder_id = '.$folder->getKey().'
+             )
+             AND i2f.item_id = i.item_id',
+         array()
+     );
+
+     $sql = $this->database->select()->setIntegrityCheck(false)->from(
+        array('i' => $sql),
+        array('sum' => 'sum(i.download)')
+     );
+     $row = $this->database->fetchRow($sql);
+     return $row['sum'];
+     }
+
+
+
   }

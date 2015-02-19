@@ -208,16 +208,41 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       }
     }
 
+  /** gets all curated folders the user has the given policy access on **/
+  abstract public function getAllFiltered($userDao, $policy);
+  /** Get the total download counts for all items in a folder's subtree,
+   * (with no filtered results). */
+  abstract public function getFolderDownloadCounts($folder);
+
   /**
-   * lists all of the curated folders that a user has Read access to.
+   * lists all of the curated folders that a user has Read access to,
+   * including a total count of their item sizes and download counts for
+   * full subtrees of the curated folder.
    */
   function listAllCuratedFolders($userDao)
     {
-    $curatedfolderDaos = $this->getAll($userDao);
-    return $curatedfolderDaos;
+    $curatedfolderDaos = $this->getAllFiltered($userDao, MIDAS_POLICY_READ);
+    $folderStats = array();
+    $folderModel = MidasLoader::loadModel('Folder');
+    foreach($curatedfolderDaos as $curatedfolder)
+      {
+      $folder = $folderModel->load($curatedfolder->getFolderId());
+      $stats = array();
+      $stats['size'] = $folderModel->getSize($folder);
+      if($stats['size'] === Null)
+        {
+        $stats['size'] = 0;
+        }
+      $stats['download'] = $this->getFolderDownloadCounts($folder);
+      if($stats['download'] === Null)
+        {
+        $stats['download'] = 0;
+        }
+      $stats['folder_id'] = $folder->getFolderId();
+      $stats['name'] = $folder->getName();
+      $folderStats[] = $stats;
+      }
+    return $folderStats;
     }
-
-
-
 
   }
