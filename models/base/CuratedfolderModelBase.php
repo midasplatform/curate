@@ -20,11 +20,10 @@
 
 require_once BASE_PATH.'/modules/curate/constant/module.php';
 /** Base model class template for the curate module */
-abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
-  {
+abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
+
   /** Constructor */
-  public function __construct()
-    {
+  public function __construct() {
     parent::__construct();
     $this->_name = 'curate_curatedfolder';
     $this->_key = 'curatedfolder_id';
@@ -39,57 +38,49 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
                        'parent_column' => 'folder_id',
                        'child_column' => 'folder_id'));
     $this->initialize();
-    }
+  }
 
   /** tracks the passed in folder for curation.  If the passed in folder
    * had not yet been tracked for curation, will set curate state to construction.
    * requires ADMIN access to the folder.
    */
-  function enableFolderCuration($folderDao)
-    {
-    if(is_null($folderDao))
-      {
+  function enableFolderCuration($folderDao) {
+    if (is_null($folderDao)) {
       throw new Exception('Non-null folder required to enable curation.', -1);
-      }
+    }
 
     // if already under curation return the curatedfolder
     $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
-    if(count($curatedfolderDaos) > 0)
-      {
+    if (count($curatedfolderDaos) > 0) {
       return $curatedfolderDaos[0];
-      }
+    }
 
     $curatedfolderDao = MidasLoader::newDao('CuratedfolderDao', 'curate');
     $curatedfolderDao->setFolderId($folderDao->getFolderId());
     $curatedfolderDao->setCurationState(CURATE_STATE_CONSTRUCTION);
     $this->save($curatedfolderDao);
     return $curatedfolderDao;
-    }
+  }
 
   /** removes the passed in folder from being tracked for curation.  If the passed
    * in folder was tracked previously returns true, false otherwise.
    * requires ADMIN access to the folder.
    */
-  function disableFolderCuration($folderDao)
-    {
-    if(is_null($folderDao))
-      {
+  function disableFolderCuration($folderDao) {
+    if (is_null($folderDao)) {
       throw new Exception('Non-null folder required to disable curation.', -1);
-      }
+    }
 
     $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
-    if(count($curatedfolderDaos) ==  0)
-      {
+    if (count($curatedfolderDaos) ==  0) {
       // if the folder isn't under curation then there is nothing to do
       return false;
-      }
-    else
-      {
+    } else {
       $curatedfolderDao = $curatedfolderDaos[0];
       $this->delete($curatedfolderDao);
       return true;
-      }
     }
+  }
 
   /** sends a notifcation email to all curation moderators requesting
    * curation approval for the passed in folder, including the passed in
@@ -97,19 +88,14 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
    * sets the curation status of the folder to requested.
    * returns the curatedfolderDao.
    */
-  function requestCurationApproval($folderDao, $message = false)
-    {
-    if(is_null($folderDao))
-      {
+  function requestCurationApproval($folderDao, $message = false) {
+    if (is_null($folderDao)) {
       throw new Exception('Non-null folder required to request curation approval.', -1);
-      }
+    }
     $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
-    if(count($curatedfolderDaos) ==  0)
-      {
+    if (count($curatedfolderDaos) ==  0) {
       throw new Exception('folder must be tracked by curation to request curation approval.', -1);
-      }
-    else
-      {
+    } else {
       $curatedfolderDao = $curatedfolderDaos[0];
       $curatedfolderDao->setCurationState(CURATE_STATE_REQUESTED);
       $this->save($curatedfolderDao);
@@ -119,35 +105,31 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       $adminDaos = $userModel->findBy('admin', '1');
 
       $moderators = array();
-      foreach($adminDaos as $admin)
-        {
+      foreach ($adminDaos as $admin) {
         $moderators[$admin->getUserId()] = $admin;
-        }
+      }
 
       // combine with all admins with those that are moderators
       $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
       $curationModeratorDaos = $curationModeratorModel->getAll();
-      foreach($curationModeratorDaos as $curationModerator)
-        {
+      foreach ($curationModeratorDaos as $curationModerator) {
         $moderatorUser = $curationModerator->getUser();//getUserId());
         $moderators[$moderatorUser->getUserId()] = $moderatorUser;
-        }
+      }
 
       // notify all in combined list
       $utilityComponent = MidasLoader::loadComponent('Utility');
       $body = "Hello Midas Curation Moderator,\nThe curated folder ".$folderDao->getName()." has been requested for curation approval.\n";
-      if(false != $message)
-        {
+      if (false != $message) {
         $body = $body . $message;
-        }
-      foreach($moderators as $userId => $moderator)
-        {
+      }
+      foreach ($moderators as $userId => $moderator) {
         $utilityComponent->sendEmail($moderator->getEmail(), 'Curation Approval Request', $body);
-        }
+      }
 
       return $curatedfolderDao;
-      }
     }
+  }
 
 
   /**
@@ -158,24 +140,18 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
    * including the message in the notification email if the message is set.
    * returns the curatedfolderDao.
    */
-  function approveCurationRequest($folderDao, $message = false)
-    {
-    if(is_null($folderDao))
-      {
+  function approveCurationRequest($folderDao, $message = false) {
+    if (is_null($folderDao)) {
       throw new Exception('Non-null folder required to approve curation request.', -1);
-      }
+    }
     $curatedfolderDaos = $this->findBy('folder_id', $folderDao->getFolderId());
-    if(count($curatedfolderDaos) ==  0)
-      {
+    if (count($curatedfolderDaos) ==  0) {
       throw new Exception('folder must be tracked by curation to approve curation request.', -1);
-      }
-    else
-      {
+    } else {
       $curatedfolderDao = $curatedfolderDaos[0];
-      if($curatedfolderDao->getCurationState() != CURATE_STATE_REQUESTED)
-        {
+      if ($curatedfolderDao->getCurationState() != CURATE_STATE_REQUESTED) {
         throw new Exception('Curated folder must be in the REQUESTED state before approving curation request.', -1);
-        }
+      }
       $curatedfolderDao->setCurationState(CURATE_STATE_APPROVED);
       $this->save($curatedfolderDao);
 
@@ -184,29 +160,25 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
       $policyDaos = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
 
       $admins = array();
-      foreach($policyDaos as $policyDao)
-        {
-        if($policyDao->getPolicy() == MIDAS_POLICY_ADMIN)
-          {
+      foreach ($policyDaos as $policyDao) {
+        if ($policyDao->getPolicy() == MIDAS_POLICY_ADMIN) {
           $admins[$policyDao->getUserId()] = $policyDao->getUser();
-          }
         }
+      }
 
       // notify all admins
       $utilityComponent = MidasLoader::loadComponent('Utility');
       $body = "Hello Midas Curated Folder Owner,\nThe curated folder ".$folderDao->getName()." has been approved for curation.\n";
-      if(false != $message)
-        {
+      if (false != $message) {
         $body = $body . $message;
-        }
-      foreach($admins as $userId => $admin)
-        {
+      }
+      foreach ($admins as $userId => $admin) {
         $utilityComponent->sendEmail($admin->getEmail(), 'Curation Approval', $body);
-        }
+      }
 
       return $curatedfolderDao;
-      }
     }
+  }
 
   /** gets all curated folders the user has the given policy access on **/
   abstract public function getAllFiltered($userDao, $policy);
@@ -219,30 +191,26 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel
    * including a total count of their item sizes and download counts for
    * full subtrees of the curated folder.
    */
-  function listAllCuratedFolders($userDao)
-    {
+  function listAllCuratedFolders($userDao) {
     $curatedfolderDaos = $this->getAllFiltered($userDao, MIDAS_POLICY_READ);
     $folderStats = array();
     $folderModel = MidasLoader::loadModel('Folder');
-    foreach($curatedfolderDaos as $curatedfolder)
-      {
+    foreach ($curatedfolderDaos as $curatedfolder) {
       $folder = $folderModel->load($curatedfolder->getFolderId());
       $stats = array();
       $stats['size'] = $folderModel->getSize($folder);
-      if($stats['size'] === Null)
-        {
+      if ($stats['size'] === Null) {
         $stats['size'] = 0;
-        }
+      }
       $stats['download'] = $this->getFolderDownloadCounts($folder);
-      if($stats['download'] === Null)
-        {
+      if ($stats['download'] === Null) {
         $stats['download'] = 0;
-        }
+      }
       $stats['folder_id'] = $folder->getFolderId();
       $stats['name'] = $folder->getName();
       $folderStats[] = $stats;
-      }
-    return $folderStats;
     }
-
+    return $folderStats;
   }
+
+}

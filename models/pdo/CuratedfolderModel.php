@@ -22,31 +22,23 @@ require_once BASE_PATH.'/modules/curate/models/base/CuratedfolderModelBase.php';
 require_once BASE_PATH.'/modules/curate/models/dao/CuratedfolderDao.php';
 
 /** PDO model template for the curate module */
-class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
-  {
+class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase {
 
   /**
    * gets all curatedfolders a user has access to with the given policy
    */
-  function getAllFiltered($userDao, $policy)
-    {
-    if($userDao == null)
-      {
+  function getAllFiltered($userDao, $policy) {
+    if ($userDao == null) {
       $userId = -1;
       $admin = false;
-      }
-    else
-      {
+    } else {
       $userId = $userDao->getUserId();
       $admin = $userDao->isAdmin();
-      }
+    }
 
-    if($admin)
-      {
+    if ($admin) {
       $sql = $this->database->select();
-      }
-    else
-      {
+    } else {
       $selectFolderpolicyuser = $this->database->select()->from('curate_curatedfolder')
                 ->join('folder',
                        'folder.folder_id = curate_curatedfolder.folder_id',
@@ -72,15 +64,14 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
                     )->where('u2g.user_id = ?', $userId).')'));
 
       $sql = $this->database->select()->union(array($selectFolderpolicyuser, $selectFolderpolicygroup));
-      }
+    }
     $rowset = $this->database->fetchAll($sql);
     $all = array();
-    foreach($rowset as $row)
-      {
+    foreach ($rowset as $row) {
       $all[] = $this->initDao('Curatedfolder', $row, 'curate');
-      }
-    return $all;
     }
+    return $all;
+  }
 
    /**
     * Get the total download counts for all items in a folder's subtree,
@@ -90,12 +81,10 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
     * @return string
     * @throws Zend_Exception
     */
-   public function getFolderDownloadCounts($folder)
-     {
-     if (!$folder instanceof FolderDao)
-       {
+   public function getFolderDownloadCounts($folder) {
+     if (!$folder instanceof FolderDao) {
        throw new Zend_Exception("Input should be a FolderDao");
-       }
+     }
      $folders = $this->database->select()->setIntegrityCheck(false)->from(
         array('f' => 'folder'),
         array('folder_id')
@@ -119,8 +108,8 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase
      );
      $row = $this->database->fetchRow($sql);
      return $row['sum'];
-     }
+   }
 
 
 
-  }
+}
