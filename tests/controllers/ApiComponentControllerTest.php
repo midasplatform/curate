@@ -91,9 +91,10 @@ class ApiControllerTest extends ControllerTestCase
   private function _loginUsingApiKeyAsAdmin()
     {
     $usersFile = $this->loadData('User', 'default');
-    $userDao = $this->User->load($usersFile[0]->getKey());
-    $userDao->setAdmin(1);
-    $this->User->save($userDao);
+    $userDao = $this->User->load(3);
+    //$usersFile[0]->getKey());
+    //$userDao->setAdmin(1);
+    //$this->User->save($userDao);
 
     $userApiModel = MidasLoader::loadModel('Userapi');
     $userApiModel->createDefaultApiKey($userDao);
@@ -101,7 +102,7 @@ class ApiControllerTest extends ControllerTestCase
 
     $this->resetAll();
     $this->params['method'] = 'midas.login';
-    $this->params['email'] = $usersFile[0]->getEmail();
+    $this->params['email'] = $userDao->getEmail();
     $this->params['appname'] = 'Default';
     $this->params['apikey'] = $apiKey;
     $this->request->setMethod('POST');
@@ -160,7 +161,7 @@ class ApiControllerTest extends ControllerTestCase
     $this->params['token'] = $userToken;
     $this->request->setMethod($httpMethod);
     $resp = $this->_callJsonApi();
-    $this->_assertStatusFailed($resp, 400);
+    $this->_assertStatusFailed($resp, 401);
 
     # with an invalid user
     $this->resetAll();
@@ -169,7 +170,7 @@ class ApiControllerTest extends ControllerTestCase
     $this->request->setMethod($httpMethod);
     $this->params['user_id'] = -1;
     $resp = $this->_callJsonApi();
-    $this->_assertStatusFailed($resp, 404);
+    $this->_assertStatusFailed($resp, 401);
     }
 
   private function _requireFolderAdminAccess($apiMethod, $httpMethod)
@@ -284,20 +285,24 @@ class ApiControllerTest extends ControllerTestCase
     $this->_requireValidSession($empowerModeratorApiMethod, $httpMethod);
     $this->_requireAdminAccess($empowerModeratorApiMethod, $httpMethod);
     $adminToken = $this->_loginUsingApiKeyAsAdmin();
-    $this->_requireValidUserId($empowerModeratorApiMethod, $httpMethod, $adminToken);
 
     $this->resetAll();
     $this->params['method'] = $empowerModeratorApiMethod;
     $this->params['token'] = $adminToken;
     $this->request->setMethod($httpMethod);
-    $this->params['user_id'] = 1;
+    $this->params['user_id'] = 2;
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
 
     // load by user_id and ensure the user is a moderator
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDaos = $moderatorModel->findBy('user_id', 1);
-    $this->assertNotEquals(count($curationModeratorDaos), 0);
+    $curationModeratorDaos = $moderatorModel->findBy('user_id', 2);
+    $this->assertEquals(count($curationModeratorDaos), 1);
+
+    // remove curation power from user
+    $userModel = MidasLoader::loadModel('User');
+    $userDao = $userModel->load(2);
+    $moderatorModel->disempowerCurationModerator($userDao);
     }
 
   /** test requestCurationApproval */
@@ -353,6 +358,7 @@ class ApiControllerTest extends ControllerTestCase
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
 
+    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
     $nonmoderatorToken = $this->_loginUsingApiKey(1);
     // should fail since user is not a moderator
     $this->resetAll();
@@ -366,9 +372,7 @@ class ApiControllerTest extends ControllerTestCase
     // ensure user index 0 is a moderator
     $usersFile = $this->loadData('User', 'default');
     $moderatorDao = $this->User->load($usersFile[0]->getKey());
-    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDao = $moderatorModel->empowerCurationModerator($moderatorDao);
-
+    $empowered = $moderatorModel->empowerCurationModerator($moderatorDao);
     // use a moderator, should fail because the folder is not under curation
     $moderatorToken = $this->_loginUsingApiKey();
     $this->resetAll();

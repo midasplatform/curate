@@ -100,22 +100,8 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       $curatedfolderDao->setCurationState(CURATE_STATE_REQUESTED);
       $this->save($curatedfolderDao);
 
-      // get all users that are admin
-      $userModel = MidasLoader::loadModel('User');
-      $adminDaos = $userModel->findBy('admin', '1');
-
-      $moderators = array();
-      foreach ($adminDaos as $admin) {
-        $moderators[$admin->getUserId()] = $admin;
-      }
-
-      // combine with all admins with those that are moderators
-      $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
-      $curationModeratorDaos = $curationModeratorModel->getAll();
-      foreach ($curationModeratorDaos as $curationModerator) {
-        $moderatorUser = $curationModerator->getUser();//getUserId());
-        $moderators[$moderatorUser->getUserId()] = $moderatorUser;
-      }
+      $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
+      $moderators = $moderatorModel->getAllCurationModerators();
 
       // notify all in combined list
       $utilityComponent = MidasLoader::loadComponent('Utility');

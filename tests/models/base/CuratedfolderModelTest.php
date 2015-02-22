@@ -133,7 +133,7 @@ class CuratedfolderModelTest extends DatabaseTestCase
     $userModel = MidasLoader::loadModel('User');
     $userDao = $userModel->load(1);
     $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
+    $empowered = $curationModeratorModel->empowerCurationModerator($userDao);
 
     $curatedfolderDao = $curatedfolderModel->requestCurationApproval($folderDao);
     $this->assertEquals($curatedfolderDao->getFolderId(), $folderDao->getFolderId());
@@ -180,7 +180,7 @@ class CuratedfolderModelTest extends DatabaseTestCase
     $userModel = MidasLoader::loadModel('User');
     $userDao = $userModel->load(1);
     $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
+    $empowered = $curationModeratorModel->empowerCurationModerator($userDao);
 
     // approve a folder that isn't in the requested state
     try

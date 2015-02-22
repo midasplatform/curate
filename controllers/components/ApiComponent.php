@@ -118,7 +118,7 @@ class Curate_ApiComponent extends AppComponent {
       throw new Exception('No user found with that id.', 404);
     }
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDao = $moderatorModel->empowerCurationModerator($empoweredUserDao);
+    $empowered = $moderatorModel->empowerCurationModerator($empoweredUserDao);
     return "OK";
   }
 
@@ -191,12 +191,9 @@ class Curate_ApiComponent extends AppComponent {
     }
 
     // require site admin or curation moderator
-    if (!$userDao->getAdmin()) {
-      $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-      $moderatorDao = $moderatorModel->load($userDao->getUserId());
-      if (false == $moderatorDao) {
-        throw new Exception('You must be a site admin or curation moderator to approve a curation request for a folder.', 401);
-      }
+    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
+    if (!$moderatorModel->isCurationModerator($userDao)) {
+      throw new Exception('You must be a site admin or curation moderator to approve a curation request for a folder.', 401);
     }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
