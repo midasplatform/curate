@@ -1,0 +1,44 @@
+<?php
+/*=========================================================================
+MIDDAS Server
+Copyright (c) Kitware SAS. 20 rue de la Villette. All rights reserved.
+69328 Lyon, FRANCE.
+See Copyright.txt for details.
+This software is distributed WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the above copyright notices for more information.
+=========================================================================*/
+$this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index.js');
+?>
+<div class="viewMain">
+    <div id="tabs-data">
+
+                <table id="curateDashboardTable" class="midasTree">
+                    <thead>
+                    <th class="thDataset"><?php echo $this->t('Dataset'); ?></th>
+                    <th class="thCurationState"><?php echo $this->t('Curation State'); ?></th>
+                    <th class="thSizeBytes"><?php echo $this->t('Size Bytes'); ?></th>
+                    <th class="thDownloads"><?php echo $this->t('Downloads'); ?></th>
+                    </thead>
+                    <tbody>
+                    <?php
+                    foreach ($this->curatedFolders as $curated) {
+                        $size = $curated['size'];
+                        $download = $curated['download'];
+                        $folder_id = $curated['folder_id'];
+                        $name = $curated['name'];
+                        $curation_state = $curated['curation_state'];
+                        echo "<tr>";
+                        echo "  <td><a href=\"/folder/{$folder_id}\">{$name}</a></td>";
+                        echo "  <td>{$curation_state}</td>";
+                        echo "  <td>{$size}</td>";
+                        echo "  <td>{$download}</td>";
+                        echo "</tr>";
+                    }
+                    ?>
+
+                    </tbody>
+                </table>
+   </div>
+</div>
+
