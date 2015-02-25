@@ -177,8 +177,8 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
    * including a total count of their item sizes and download counts for
    * full subtrees of the curated folder.
    */
-  function listAllCuratedFolders($userDao) {
-    $curatedfolderDaos = $this->getAllFiltered($userDao, MIDAS_POLICY_READ);
+  function listAllCuratedFolders($userDao, $policy) {
+    $curatedfolderDaos = $this->getAllFiltered($userDao, $policy);//MIDAS_POLICY_READ);
     $folderStats = array();
     $folderModel = MidasLoader::loadModel('Folder');
     foreach ($curatedfolderDaos as $curatedfolder) {
@@ -192,6 +192,7 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       if ($stats['download'] === Null) {
         $stats['download'] = 0;
       }
+      $stats['curatedfolder_id'] = $curatedfolder->getCuratedfolderId();
       $stats['folder_id'] = $folder->getFolderId();
       $stats['name'] = $folder->getName();
       $stats['curation_state'] = $curatedfolder->getCurationState();

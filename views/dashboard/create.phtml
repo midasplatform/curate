@@ -1,0 +1,46 @@
+<?php
+/*=========================================================================
+MIDDAS Server
+Copyright (c) Kitware SAS. 20 rue de la Villette. All rights reserved.
+69328 Lyon, FRANCE.
+See Copyright.txt for details.
+This software is distributed WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the above copyright notices for more information.
+=========================================================================*/
+$this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.browser.js');
+?>
+<link href="<?php echo $this->moduleWebroot ?>/public/css/dashboard/curatedfolder.create.css" rel="stylesheet"
+      type="text/css"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+<form id="createCuratedFolderForm" class="genericForm" method="<?php echo $this->form['method'] ?>"
+      action="<?php echo $this->form['action'] ?>">
+    <div id='createCuratedFolderInstructions'>
+        This will create a new folder for a curated dataset, located in a specific community, and with upload access for a specific user.
+    </div>
+    <div class='communitySelect'>
+        <label for='community'>Community</label>
+        <?php echo $this->form['community']; ?>
+    </div>
+    <div class='curatedFolder'>
+        <div class='curatedFolderNameElement'>
+            <label for='name'><?php echo $this->t('Folder Name') ?></label>
+            <?php echo $this->form['name'] ?>
+        </div>
+        <div class='curatedFolderDescriptionElement'>
+            <label for='description'><?php echo $this->t('Folder Description') ?></label>
+            <?php echo $this->form['description'] ?>
+        </div>
+    </div>
+    <div class='uploadingUserSelect'>
+        <label for='uploader'>Uploading User</label>
+        <?php echo $this->form['uploader']; ?>
+    </div>
+    <div>
+        <?php echo $this->form['submit'] ?>
+    </div>
+</form>
+<div style="display: none;" id="curatedFolderJson">
+    <?php echo $this->json; ?>
+</div>

@@ -9,6 +9,7 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
 $this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index.js');
+$this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.browser.js');
 ?>
 <div class="viewMain">
     <div id="tabs-data">
@@ -19,13 +20,16 @@ $this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index
                     <th class="thCurationState"><?php echo $this->t('Curation State'); ?></th>
                     <th class="thSizeBytes"><?php echo $this->t('Size Bytes'); ?></th>
                     <th class="thDownloads"><?php echo $this->t('Downloads'); ?></th>
+                    <th class="thAction"><?php echo $this->t('Action'); ?></th>
                     </thead>
                     <tbody>
                     <?php
+//var_dump($this->curatedFolders);
                     foreach ($this->curatedFolders as $curated) {
                         $size = $curated['size'];
                         $download = $curated['download'];
                         $folder_id = $curated['folder_id'];
+                        $curatedfolder_id = $curated['curatedfolder_id'];
                         $name = $curated['name'];
                         $curation_state = $curated['curation_state'];
                         echo "<tr>";
@@ -33,12 +37,48 @@ $this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index
                         echo "  <td>{$curation_state}</td>";
                         echo "  <td>{$size}</td>";
                         echo "  <td>{$download}</td>";
+                        //echo "  <td><input type='checkbox' class='curatedfolderCheckbox' type='folder' element='{$this->escape($curatedfolder_id)}' id='folderCheckbox{$this->escape($curatedfolder_id)}' /></td>";
+//                        echo "  <td><input type='checkbox' class='treeCheckbox' type='curatedfolder' element='{$this->escape($curatedfolder_id)}' id='curatedfolderCheckbox{$this->escape($curatedfolder_id)}' /></td>";
+                        if ($this->isAdmin) {
+                           if($curation_state == CURATE_STATE_CONSTRUCTION) {
+                               echo "<td><img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for request</td>";
+                           } else if ($curation_state == CURATE_STATE_REQUESTED) {
+                               echo "<td><a onclick=\"midas.curate.adminApprove($curatedfolder_id);\"><img src=\"/core/public/images/icons/ok.png\" style=\"padding-right: 5px;\">approve request</a></td>";
+                           } else if ($curation_state == CURATE_STATE_APPROVED) {
+                               echo "  <td></td>";
+                           }
+                        } else {
+                           if($curation_state == CURATE_STATE_CONSTRUCTION) {
+                               echo "<td><a onclick=\"midas.curate.uploaderRequestApproval($curatedfolder_id);\"><img src=\"/core/public/images/icons/log.png\" style=\"padding-right: 5px;\">request approval</a></td>";
+                           } else if ($curation_state == CURATE_STATE_REQUESTED) {
+                               echo "<td><img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for approval</td>";
+                           } else if ($curation_state == CURATE_STATE_APPROVED) {
+                               echo "  <td></td>";
+                           }
+                       }
+
                         echo "</tr>";
                     }
                     ?>
 
                     </tbody>
                 </table>
-   </div>
+    </div>
 </div>
-
+<div class="viewSideBar">
+    <div class='sideElementFirst genericAction'>
+        <h1>Curator Actions</h1>
+            <ul>
+            <?php if ($this->isAdmin) {
+                    echo "<li><a onclick='midas.curate.createNewCuratedFolder();'><img alt='' src='{$this->coreWebroot}/public/images/icons/folder_add.png'/> {$this->t(
+                        'Create a Curated Folder'
+                    )}</a></li>";
+                  }
+            ?>
+            </ul>
+    </div>
+    <div class="sideElement viewSelected">
+       <h1><?php echo $this->t('Checked') ?><span></span></h1>
+       <span></span>
+    </div>
+</div>
