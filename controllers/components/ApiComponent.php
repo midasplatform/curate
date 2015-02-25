@@ -125,7 +125,7 @@ class Curate_ApiComponent extends AppComponent {
   /**
    * Request that a curated folder be approved, will email all site admins and
    * curation moderators, calling user must have Admin access to the folder..
-   * @param folder_id id of the folder to request approval for.
+   * @param folderId id of the folder to request approval for.
    * @param message optional message to include in the email.
    * @return "OK" on success
    */
@@ -135,17 +135,18 @@ class Curate_ApiComponent extends AppComponent {
       throw new Exception('You must login to request curation approval for a folder.', 401);
     }
 
-    $this->_checkKeys(array('folder_id'), $args);
+    $this->_checkKeys(array('folderId'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
-    $folderDao = $folderModel->load($args['folder_id']);
+    $folderDao = $folderModel->load($args['folderId']);
     if (!$folderDao) {
       throw new Exception('No folder found with that id.', 404);
     }
     if (!$folderModel->policyCheck($folderDao, $userDao, MIDAS_POLICY_WRITE)) {
-      throw new Exception("Admin permissions required on the folder.", 401);
+      throw new Exception("WRITE permissions required on the folder.", 401);
     }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+
     if (array_key_exists('message', $args)) {
       $message = $args['message'];
     } else {
@@ -159,17 +160,16 @@ class Curate_ApiComponent extends AppComponent {
         throw new Exception($e->getMessage(), 404);
       }
     }
-
     return "OK";
   }
 
+
   /**
-   * Approve a curation request for a curated folder.  Will email all users
-   * with direct Admin access to the folder (not via a group) with a notification,
-   * and will set the curated folder to the state of APPROVED; calling user
-   * must be a site admin or curation moderator.
-   * @param folder_id id of the folder to approve a curation request for.
-   * @param message optional message to include in the email.
+   * Approve a curation request for a curated folder, requires site admin access.
+   * Will move the curatedfolder from the requested state to the approved state,
+   * will remove write access by any individual users, and will add member read
+   * access to the community that the folder is a child of.
+   * @param folderId id of the folder to approve a curation request for.
    * @return "OK" on success
    */
   public function approveCuration($args) {
@@ -178,9 +178,9 @@ class Curate_ApiComponent extends AppComponent {
       throw new Exception('You must login to approve a curation request for a folder.', 401);
     }
 
-    $this->_checkKeys(array('folder_id'), $args);
+    $this->_checkKeys(array('folderId'), $args);
     $folderModel = MidasLoader::loadModel('Folder');
-    $folderDao = $folderModel->load($args['folder_id']);
+    $folderDao = $folderModel->load($args['folderId']);
     if (!$folderDao) {
       throw new Exception('No folder found with that id.', 404);
     }
@@ -189,19 +189,11 @@ class Curate_ApiComponent extends AppComponent {
     if (!$userDao) {
       throw new Exception('You must login to approve a curation request for a folder.', 401);
     }
-
-    // require site admin or curation moderator
-    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    if (!$moderatorModel->isCurationModerator($userDao)) {
-      throw new Exception('You must be a site admin or curation moderator to approve a curation request for a folder.', 401);
+    if (!$userDao->getAdmin()) {
+      throw new Exception('You must be a site admin to approve a curation request for a folder.', 401);
     }
 
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
-    if (array_key_exists('message', $args)) {
-      $message = $args['message'];
-    } else {
-      $message = false;
-    }
     try {
       $curatedfolderDao = $curatedfolderModel->approveCurationRequest($folderDao, $message);
     } catch (Exception $e) {

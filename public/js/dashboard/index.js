@@ -3,62 +3,54 @@ midas.curate = midas.curate || {};
 
 
 midas.curate.createNewCuratedFolder = function() {
+    'use strict';
     if (json.global.logged) {
         console.log('CREATE CURATED FOLDER');
         midas.loadDialog('createCuratedFolder', '/curate/dashboard/create');
         midas.showDialog('Create Curated Folder', false);
-   } else {
+    } else {
         console.log('NEED TO BE LOGGED IN');
     }
-
-
 };
 
-/*function callbackSelect(node) {
+midas.curate.adminApprove = function(folderId) {
     'use strict';
-    console.log('callback select');
-    console.log(node);
+    ajaxWebApi.ajax({
+        method: 'midas.curate.approve.curation',
+        args: 'folderId=' + folderId,
+        success: function(response) {
+            if (response.data == 'OK') {
+                $('#curatedFolder'+folderId+' .curationState').text('approved');
+                $('#curatedFolder'+folderId+' .curationAction').text('');
+            } else {
+                // TODO handle error
+                console.log(response);
+            }
+        }
+    });
 }
 
-function callbackCheckboxes(node) {
+midas.curate.uploaderRequestApproval = function(folderId) {
     'use strict';
-    console.log('callback checkboxes');
-    console.log(node);
-}*/
-midas.curate.adminApprove = function(curatedfolderId) {
-    console.log('adminApprove:'+curatedfolderId);
-    // TODO call api endpoint
-    //  check admin
-    //  change state to approved
-    //  remove write access if any
-    //  add community member read access
-    // TODO frontend
-    //  change curation state
-    //  change action
+    ajaxWebApi.ajax({
+        method: 'midas.curate.request.approval',
+        args: 'folderId=' + folderId,
+        success: function(response) {
+            console.log(response);
+            if (response.data == 'OK') {
+                $('#curatedFolder'+folderId+' .curationState').text('requested');
+                var actionHTML = '<img src="/core/public/images/icons/time.png" style="padding-right: 5px;">wait for approval';
+                $('#curatedFolder'+folderId+' .curationAction').html(actionHTML);
+            } else {
+                // TODO handle error
+                console.log(response);
+            }
+        }
+    });
 }
-midas.curate.uploaderRequestApproval = function(curatedfolderId) {
-    console.log('uploaderRequestApproval:'+curatedfolderId);
-    // TODO call api endpoint
-    //  check user has write
-    //  change state to requested
-    //  remove write access for user, replace with user specific read
-    // TODO frontend
-    //  change curation state
-    //  change action
-}}
 
 
 $(function() {
     'use strict';
-    /*$('#curateDashboardTableHeaderCheckbox').qtip({
-        content: 'Check/Uncheck All'
-    });
-                        echo "  <td><input type='checkbox' class='treeCheckbox' type='curatedfolder' element='{$this->escape($curatedfolder_id)}' id='curatedfolderCheckbox{$this->escape($curatedfolder_id)}' /></td>";*/
-//    midas.browser.enableSelectAll();
-//    $('#curateDashboardTable').treeTable({});
     $('#curateDashboardTable').show();
-    $('.curatedfolderCheckbox').change(function() {
-        // TODO get the checkbox stateg
-       console.log("check or uncheck");
-    });
 });

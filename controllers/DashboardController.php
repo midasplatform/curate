@@ -32,22 +32,20 @@ class Curate_DashboardController extends Curate_AppController {
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
     $this->view->isAdmin = false;
     if ($this->logged) {
-//      echo "LOGGED";
       $userDao = $this->userSession->Dao;
       if ($userDao->isAdmin()) {
-//        echo "ADMIN";
         $this->view->isAdmin = true;
         $this->view->curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao, MIDAS_POLICY_ADMIN);
       } else {
-//        echo "WEAK";
-        $this->view->curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao, MIDAS_POLICY_WRITE);
+        $this->view->curatedFolders = $curatedfolderModel->listAllCuratedFolders($userDao, MIDAS_POLICY_READ);
       }
     } else {
-//      echo "NOTLOGGED";
       $userDao = null;
     }
-//    $this->disableLayout();
   }
+
+
+
 
   /** create create curated folder form */
   public function createCuratedFolderForm($displayCommunities = array(), $displayUsers = array()) {
@@ -106,14 +104,6 @@ class Curate_DashboardController extends Curate_AppController {
 
         $this->redirect('/community/'.$communityId);
 
-
-
-
- /*
-        //$form = $this->createCuratedFolderForm();
-        //echo 'form vali'.$form->isValid($this->getRequest()->getPost());
-        //var_dump($this->getRequest()->getPost());
-        */
     } else {
       $communityModel = MidasLoader::loadModel('Community');
       $communities = $communityModel->getAll();

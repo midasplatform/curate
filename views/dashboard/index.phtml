@@ -10,6 +10,7 @@ PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
 $this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index.js');
 $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.browser.js');
+$this->headScript()->appendFile($this->apiWebroot.'/public/js/common/common.ajaxapi.js');
 ?>
 <div class="viewMain">
     <div id="tabs-data">
@@ -24,7 +25,6 @@ $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.bro
                     </thead>
                     <tbody>
                     <?php
-//var_dump($this->curatedFolders);
                     foreach ($this->curatedFolders as $curated) {
                         $size = $curated['size'];
                         $download = $curated['download'];
@@ -32,31 +32,29 @@ $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.bro
                         $curatedfolder_id = $curated['curatedfolder_id'];
                         $name = $curated['name'];
                         $curation_state = $curated['curation_state'];
-                        echo "<tr>";
+                        echo "<tr id='curatedFolder{$this->escape($folder_id)}'>";
                         echo "  <td><a href=\"/folder/{$folder_id}\">{$name}</a></td>";
-                        echo "  <td>{$curation_state}</td>";
+                        echo "  <td class='curationState'>{$curation_state}</td>";
                         echo "  <td>{$size}</td>";
                         echo "  <td>{$download}</td>";
-                        //echo "  <td><input type='checkbox' class='curatedfolderCheckbox' type='folder' element='{$this->escape($curatedfolder_id)}' id='folderCheckbox{$this->escape($curatedfolder_id)}' /></td>";
-//                        echo "  <td><input type='checkbox' class='treeCheckbox' type='curatedfolder' element='{$this->escape($curatedfolder_id)}' id='curatedfolderCheckbox{$this->escape($curatedfolder_id)}' /></td>";
+                        echo "  <td class='curationAction'>";
                         if ($this->isAdmin) {
                            if($curation_state == CURATE_STATE_CONSTRUCTION) {
-                               echo "<td><img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for request</td>";
+                               echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for request";
                            } else if ($curation_state == CURATE_STATE_REQUESTED) {
-                               echo "<td><a onclick=\"midas.curate.adminApprove($curatedfolder_id);\"><img src=\"/core/public/images/icons/ok.png\" style=\"padding-right: 5px;\">approve request</a></td>";
+                               echo "<a onclick=\"midas.curate.adminApprove($folder_id);\"><img src=\"/core/public/images/icons/ok.png\" style=\"padding-right: 5px;\">approve request</a>";
                            } else if ($curation_state == CURATE_STATE_APPROVED) {
-                               echo "  <td></td>";
+                               //
                            }
                         } else {
                            if($curation_state == CURATE_STATE_CONSTRUCTION) {
-                               echo "<td><a onclick=\"midas.curate.uploaderRequestApproval($curatedfolder_id);\"><img src=\"/core/public/images/icons/log.png\" style=\"padding-right: 5px;\">request approval</a></td>";
+                               echo "<a onclick=\"midas.curate.uploaderRequestApproval($folder_id);\"><img src=\"/core/public/images/icons/lock.png\" style=\"padding-right: 5px;\">request approval</a>";
                            } else if ($curation_state == CURATE_STATE_REQUESTED) {
-                               echo "<td><img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for approval</td>";
+                               echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for approval";
                            } else if ($curation_state == CURATE_STATE_APPROVED) {
-                               echo "  <td></td>";
+                               //
                            }
-                       }
-
+                        }
                         echo "</tr>";
                     }
                     ?>
@@ -67,15 +65,15 @@ $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.bro
 </div>
 <div class="viewSideBar">
     <div class='sideElementFirst genericAction'>
-        <h1>Curator Actions</h1>
-            <ul>
-            <?php if ($this->isAdmin) {
-                    echo "<li><a onclick='midas.curate.createNewCuratedFolder();'><img alt='' src='{$this->coreWebroot}/public/images/icons/folder_add.png'/> {$this->t(
+        <?php if ($this->isAdmin) {
+            echo "<h1>Curator Actions</h1>";
+            echo "<ul>";
+            echo "<li><a onclick='midas.curate.createNewCuratedFolder();'><img alt='' src='{$this->coreWebroot}/public/images/icons/folder_add.png'/> {$this->t(
                         'Create a Curated Folder'
                     )}</a></li>";
                   }
-            ?>
-            </ul>
+            echo "</ul>";
+        ?>
     </div>
     <div class="sideElement viewSelected">
        <h1><?php echo $this->t('Checked') ?><span></span></h1>

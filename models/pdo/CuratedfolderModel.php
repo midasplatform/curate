@@ -39,7 +39,8 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase {
     if ($admin) {
       $sql = $this->database->select();
     } else {
-      $selectFolderpolicyuser = $this->database->select()->from('curate_curatedfolder')
+      $sql = $this->database->select()->from('curate_curatedfolder')
+      //$selectFolderpolicyuser = $this->database->select()->from('curate_curatedfolder')
                 ->join('folder',
                        'folder.folder_id = curate_curatedfolder.folder_id',
                         array())
@@ -48,7 +49,7 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase {
                         array())
                 ->where('folderpolicyuser.user_id = ?', $userId)
                 ->where('folderpolicyuser.policy >= ?', $policy);
-      $selectFolderpolicygroup = $this->database->select()->from('curate_curatedfolder')
+/*      $selectFolderpolicygroup = $this->database->select()->from('curate_curatedfolder')
                 ->join('folder',
                        'folder.folder_id = curate_curatedfolder.folder_id',
                         array())
@@ -62,8 +63,9 @@ class Curate_CuratedfolderModel extends Curate_CuratedfolderModelBase {
                            array('u2g' => 'user2group'),
                            array('group_id')
                     )->where('u2g.user_id = ?', $userId).')'));
-
-      $sql = $this->database->select()->union(array($selectFolderpolicyuser, $selectFolderpolicygroup));
+ */
+      //$sql = $this->database->select()->union(array($selectFolderpolicyuser, $selectFolderpolicygroup));
+      //$sql = $this->database->select($selectFolderpolicyuser);
     }
     $rowset = $this->database->fetchAll($sql);
     $all = array();

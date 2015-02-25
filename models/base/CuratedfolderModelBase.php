@@ -82,13 +82,13 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
     }
   }
 
-  /** sends a notifcation email to all curation moderators requesting
-   * curation approval for the passed in folder, including the passed in
-   * message if it is set.
-   * sets the curation status of the folder to requested.
+  /**
+   * changes the curation state on a curated folder that is currently in the
+   * CONSTRUCTION state, to the REQUESTED state,
+   * removes all individual folderpolicyuser with WRITE and replaces them with READ.
    * returns the curatedfolderDao.
    */
-  function requestCurationApproval($folderDao, $message = false) {
+  function requestCurationApproval($folderDao) {
     if (is_null($folderDao)) {
       throw new Exception('Non-null folder required to request curation approval.', -1);
     }
@@ -100,30 +100,33 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       $curatedfolderDao->setCurationState(CURATE_STATE_REQUESTED);
       $this->save($curatedfolderDao);
 
-      $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-      $moderators = $moderatorModel->getAllCurationModerators();
-
-      // notify all in combined list
-      $utilityComponent = MidasLoader::loadComponent('Utility');
-      $body = "Hello Midas Curation Moderator,\nThe curated folder ".$folderDao->getName()." has been requested for curation approval.\n";
-      if (false != $message) {
-        $body = $body . $message;
-      }
-      foreach ($moderators as $userId => $moderator) {
-        $utilityComponent->sendEmail($moderator->getEmail(), 'Curation Approval Request', $body);
+      // change any folderpolicyuser associated with the folder from WRITE to READ
+      $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
+      $policies = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
+      foreach ($policies as $policy) {
+          if ($policy->getPolicy() == MIDAS_POLICY_WRITE) {
+            $policyUser = $policy->getUser();
+            $folderpolicyuserModel->delete($policy);
+            $folderpolicyuserModel->createPolicy($policyUser, $folderDao, MIDAS_POLICY_READ);
+          }
       }
 
       return $curatedfolderDao;
     }
   }
-
+    // TODO call api endpoint
+    //  check user has write
+    //  change state to requested
+    //  remove write access for user, replace with user specific read
+    // TODO frontend
+    //  change curation state
+    //  change action
 
   /**
    * approves the curation request on a curated folder that is currently
    * in the REQUESTED state, sets the curation state to APPROVED,
-   * sends a notifcation email to all users with direct admin
-   * access to the passed in folder from a Folderpolicyuser,
-   * including the message in the notification email if the message is set.
+   * removes any folderpolicyuser on that folder, adds community member read
+   * access for the community the folder is a child of.
    * returns the curatedfolderDao.
    */
   function approveCurationRequest($folderDao, $message = false) {
@@ -141,26 +144,18 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       $curatedfolderDao->setCurationState(CURATE_STATE_APPROVED);
       $this->save($curatedfolderDao);
 
-      // get all users that are admin for the folder
+      // delete any folderpolicyuser associated with the folder
       $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
-      $policyDaos = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
-
-      $admins = array();
-      foreach ($policyDaos as $policyDao) {
-        if ($policyDao->getPolicy() == MIDAS_POLICY_ADMIN) {
-          $admins[$policyDao->getUserId()] = $policyDao->getUser();
-        }
+      $policies = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
+      foreach ($policies as $policy) {
+        $folderpolicyuserModel->delete($policy);
       }
 
-      // notify all admins
-      $utilityComponent = MidasLoader::loadComponent('Utility');
-      $body = "Hello Midas Curated Folder Owner,\nThe curated folder ".$folderDao->getName()." has been approved for curation.\n";
-      if (false != $message) {
-        $body = $body . $message;
-      }
-      foreach ($admins as $userId => $admin) {
-        $utilityComponent->sendEmail($admin->getEmail(), 'Curation Approval', $body);
-      }
+      // add community member read access
+      $communityModel = MidasLoader::loadModel('Community');
+      $community = $communityModel->getByFolder($folderDao->getParent());
+      $folderpolicygroupModel = MidasLoader::loadModel('Folderpolicygroup');
+      $folderpolicygroupModel->createPolicy($community->getMemberGroup(), $folderDao, MIDAS_POLICY_READ);
 
       return $curatedfolderDao;
     }
