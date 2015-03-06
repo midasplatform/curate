@@ -73,23 +73,26 @@ class Curate_DashboardController extends Curate_AppController {
 
   /** create a curated folder (ajax) */
   public function createAction() {
-    if ($this->_request->isPost()){// && $form->isValid($this->getRequest()->getPost())) {
-        // TODO check user is admin
-        //$this->disableLayout();
+    $this->requireAdminPrivileges();
+    if ($this->_request->isPost()) {
+        $this->disableLayout();
+        $this->disableView();
+
         $formParams = $this->getRequest()->getPost();
         $name = $formParams['name'];
         $description = $formParams['description'];
         $communityId = $formParams['community'];
         $uploader = $formParams['uploader'];
-        //echo $name;
-        //echo $communityId;
+
         $communityModel = MidasLoader::loadModel('Community');
         $community = $communityModel->load($communityId);
-        //var_dump($community);
-        // TODO check that foldername isn't blank and isn't taken
+        $folderModel = MidasLoader::loadModel('Folder');
+        if ($folderModel->getFolderExists($name, $community->getFolder())) {
+            echo JsonComponent::encode(array(false, $this->t('A Folder with that name already exists in the selected Community')));
+            return;
+        }
 
         // create a top level folder in the community
-        $folderModel = MidasLoader::loadModel('Folder');
         $curatedFolder = $folderModel->createFolder($name, $description, $community->getFolder());
 
         // track the folder for curation
@@ -102,8 +105,8 @@ class Curate_DashboardController extends Curate_AppController {
         $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
         $folderpolicyuserModel->createPolicy($user, $curatedFolder, MIDAS_POLICY_WRITE);
 
-        $this->redirect('/community/'.$communityId);
-
+        echo JsonComponent::encode(array(true, $this->t('Folder successfully created')));
+        return;
     } else {
       $communityModel = MidasLoader::loadModel('Community');
       $communities = $communityModel->getAll();

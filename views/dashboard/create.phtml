@@ -8,7 +8,9 @@ This software is distributed WITHOUT ANY WARRANTY; without even
 the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
-$this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.browser.js');
+echo '<script type="text/javascript" src="'.$this->coreWebroot.'/public/js/common/common.browser.js"></script>';
+echo '<script type="text/javascript" src="'.$this->coreWebroot.'/public/js/jquery/jquery.form.js"></script>';
+echo '<script type="text/javascript" src="'.$this->moduleWebroot.'/public/js/dashboard/createcuratefolder.js"></script>';
 ?>
 <link href="<?php echo $this->moduleWebroot ?>/public/css/dashboard/curatedfolder.create.css" rel="stylesheet"
       type="text/css"/>
@@ -41,6 +43,3 @@ $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.bro
         <?php echo $this->form['submit'] ?>
     </div>
 </form>
-<div style="display: none;" id="curatedFolderJson">
-    <?php echo $this->json; ?>
-</div>
