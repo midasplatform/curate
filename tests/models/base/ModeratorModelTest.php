@@ -38,15 +38,35 @@ class ModeratorModelTest extends DatabaseTestCase
     {
     $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
     $userDao = $this->User->load(1);
-    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
-    // load the dao from the db and ensure it exists
-    $curationModeratorDao = $curationModeratorModel->load($curationModeratorDao->getModeratorId());
-    $this->assertEquals($userDao->getUserId(), $curationModeratorDao->getUserId(), 'curation moderator and user id do not match');
+    $empowered = $curationModeratorModel->empowerCurationModerator($userDao);
 
     // empower same user and make sure we aren't creating multiple rows in the table
-    $curationModeratorDao = $curationModeratorModel->empowerCurationModerator($userDao);
-    $curationModeratorDaos = $curationModeratorModel->findBy('user_id', $curationModeratorDao->getModeratorId());
+    $empowered = $curationModeratorModel->empowerCurationModerator($userDao);
+    $curationModeratorDaos = $curationModeratorModel->findBy('user_id', $userDao->getUserId());
     $this->assertEquals(count($curationModeratorDaos), 1, "too many curation moderator rows created");
+
+    $disempowered = $curationModeratorModel->disempowerCurationModerator($userDao);
     }
 
+  public function testIsCurationModerator() {
+    $curationModeratorModel = MidasLoader::loadModel('Moderator', 'curate');
+    $userDao = $this->User->load(1);
+    $empowered = $curationModeratorModel->isCurationModerator($userDao);
+    $this->assertEquals($empowered, false, "User should not be a curation moderator");
+
+    $empowered = $curationModeratorModel->empowerCurationModerator($userDao);
+    $this->assertEquals(true, $empowered, "User should have been empowered as a curation moderator");
+
+    // test an admin user
+    $adminUserDao = $this->User->load(1);
+    $this->assertEquals(true, $curationModeratorModel->isCurationModerator($userDao), "Admin user should be a curation moderator");
+
+
+    $disempowered = $curationModeratorModel->disempowerCurationModerator($userDao);
+    $this->assertEquals(true, $disempowered, "User should have been disempowered as a curation moderator");
+    $this->assertEquals(false, $curationModeratorModel->isCurationModerator($userDao), "User should not be a curation moderator");
   }
+
+
+
+}

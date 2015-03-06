@@ -79,7 +79,7 @@ class ApiControllerTest extends ControllerTestCase
 
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
-    $this->assertEquals(strlen($resp->data->token), 40);
+    $this->assertEquals(strlen($resp->data->token), 32);
 
     // **IMPORTANT** This will clear any params that were set before this
     // function was called
@@ -91,9 +91,10 @@ class ApiControllerTest extends ControllerTestCase
   private function _loginUsingApiKeyAsAdmin()
     {
     $usersFile = $this->loadData('User', 'default');
-    $userDao = $this->User->load($usersFile[0]->getKey());
-    $userDao->setAdmin(1);
-    $this->User->save($userDao);
+    $userDao = $this->User->load(3);
+    //$usersFile[0]->getKey());
+    //$userDao->setAdmin(1);
+    //$this->User->save($userDao);
 
     $userApiModel = MidasLoader::loadModel('Userapi');
     $userApiModel->createDefaultApiKey($userDao);
@@ -101,14 +102,14 @@ class ApiControllerTest extends ControllerTestCase
 
     $this->resetAll();
     $this->params['method'] = 'midas.login';
-    $this->params['email'] = $usersFile[0]->getEmail();
+    $this->params['email'] = $userDao->getEmail();
     $this->params['appname'] = 'Default';
     $this->params['apikey'] = $apiKey;
     $this->request->setMethod('POST');
 
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
-    $this->assertEquals(strlen($resp->data->token), 40);
+    $this->assertEquals(strlen($resp->data->token), 32);
 
     // **IMPORTANT** This will clear any params that were set before this
     // function was called
@@ -160,7 +161,7 @@ class ApiControllerTest extends ControllerTestCase
     $this->params['token'] = $userToken;
     $this->request->setMethod($httpMethod);
     $resp = $this->_callJsonApi();
-    $this->_assertStatusFailed($resp, 400);
+    $this->_assertStatusFailed($resp, 401);
 
     # with an invalid user
     $this->resetAll();
@@ -169,7 +170,7 @@ class ApiControllerTest extends ControllerTestCase
     $this->request->setMethod($httpMethod);
     $this->params['user_id'] = -1;
     $resp = $this->_callJsonApi();
-    $this->_assertStatusFailed($resp, 404);
+    $this->_assertStatusFailed($resp, 401);
     }
 
   private function _requireFolderAdminAccess($apiMethod, $httpMethod)
@@ -284,20 +285,24 @@ class ApiControllerTest extends ControllerTestCase
     $this->_requireValidSession($empowerModeratorApiMethod, $httpMethod);
     $this->_requireAdminAccess($empowerModeratorApiMethod, $httpMethod);
     $adminToken = $this->_loginUsingApiKeyAsAdmin();
-    $this->_requireValidUserId($empowerModeratorApiMethod, $httpMethod, $adminToken);
 
     $this->resetAll();
     $this->params['method'] = $empowerModeratorApiMethod;
     $this->params['token'] = $adminToken;
     $this->request->setMethod($httpMethod);
-    $this->params['user_id'] = 1;
+    $this->params['user_id'] = 2;
     $resp = $this->_callJsonApi();
     $this->_assertStatusOk($resp);
 
     // load by user_id and ensure the user is a moderator
     $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDaos = $moderatorModel->findBy('user_id', 1);
-    $this->assertNotEquals(count($curationModeratorDaos), 0);
+    $curationModeratorDaos = $moderatorModel->findBy('user_id', 2);
+    $this->assertEquals(count($curationModeratorDaos), 1);
+
+    // remove curation power from user
+    $userModel = MidasLoader::loadModel('User');
+    $userDao = $userModel->load(2);
+    $moderatorModel->disempowerCurationModerator($userDao);
     }
 
   /** test requestCurationApproval */
@@ -353,6 +358,7 @@ class ApiControllerTest extends ControllerTestCase
     $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
 
+    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
     $nonmoderatorToken = $this->_loginUsingApiKey(1);
     // should fail since user is not a moderator
     $this->resetAll();
@@ -366,9 +372,7 @@ class ApiControllerTest extends ControllerTestCase
     // ensure user index 0 is a moderator
     $usersFile = $this->loadData('User', 'default');
     $moderatorDao = $this->User->load($usersFile[0]->getKey());
-    $moderatorModel = MidasLoader::loadModel('Moderator', 'curate');
-    $curationModeratorDao = $moderatorModel->empowerCurationModerator($moderatorDao);
-
+    $empowered = $moderatorModel->empowerCurationModerator($moderatorDao);
     // use a moderator, should fail because the folder is not under curation
     $moderatorToken = $this->_loginUsingApiKey();
     $this->resetAll();
@@ -459,5 +463,78 @@ class ApiControllerTest extends ControllerTestCase
     $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($folderDao);
   }
 
+  /** test listAllCuratedFolders */
+  public function testListAllCuratedFolders() {
+    $listAllCuratedFoldersApiMethod = 'midas.curate.list.all.curated.folders';
+    $httpMethod = 'GET';
 
- }
+    // create a folder with 1 item that only admin user can see
+    $folderModel = MidasLoader::loadModel('Folder');
+    $adminFolder = $this->Folder->createFolder('adminFolder', '', -1);
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $loadedCuratedfolderDao = $curatedfolderModel->enableFolderCuration($adminFolder);
+
+    $itemModel = MidasLoader::loadModel('Item');
+    $adminItem = $itemModel->createItem('adminitem', '', $adminFolder);
+    $adminSizeBytes = 100;
+    $adminItem->setSizebytes($adminSizeBytes);
+    $adminDownloadCount = 10;
+    $adminItem->setDownload($adminDownloadCount);
+    $itemModel->save($adminItem);
+
+    // create a folder with 1 item that anonymous can see
+    $anonFolder = $this->Folder->createFolder('anonFolder', '', -1);
+    $loadedCuratedfolderDao = $curatedfolderModel->enableFolderCuration($anonFolder);
+    $groupModel = MidasLoader::loadModel('Group');
+    $anonGroup = $groupModel->load(MIDAS_GROUP_ANONYMOUS_KEY);
+    $folderpolicygroupModel = MidasLoader::loadModel('Folderpolicygroup');
+    $folderpolicygroupModel->createPolicy($anonGroup, $anonFolder, MIDAS_POLICY_READ);
+
+    $anonItem = $itemModel->createItem('anonitem', '', $anonFolder);
+    $anonSizeBytes = 200;
+    $anonItem->setSizebytes($anonSizeBytes);
+    $anonDownloadCount = 20;
+    $anonItem->setDownload($anonDownloadCount);
+    $itemModel->save($anonItem);
+
+    // call listAllCuratedFolders with anonymous user
+    $this->resetAll();
+    $this->params['method'] = $listAllCuratedFoldersApiMethod;
+    $this->request->setMethod($httpMethod);
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+    $this->assertEquals($resp->data[0]->size, $anonSizeBytes, "anonymous user should have ".$anonSizeBytes." size of items under curation.");
+    $this->assertEquals($resp->data[0]->download, $anonDownloadCount, "anonymous user should have ".$anonDownloadCount." downloads of items under curation.");
+
+    // call listAllCuratedFolders with anonymous user
+    $adminToken = $this->_loginUsingApiKeyAsAdmin();
+    $this->resetAll();
+    $this->params['token'] = $adminToken;
+    $this->params['method'] = $listAllCuratedFoldersApiMethod;
+    $this->request->setMethod($httpMethod);
+    $resp = $this->_callJsonApi();
+    $this->_assertStatusOk($resp);
+
+    $anonFolderChecked = false;
+    $adminFolderChecked = false;
+    foreach($resp->data as $curatedStats) {
+        if($curatedStats->folder_id === $anonFolder->getFolderId()) {
+        $this->assertEquals($curatedStats->size, $anonItem->getSizebytes(), 'Anonymous item incorrect bytes');
+        $this->assertEquals($curatedStats->download, $anonItem->getDownload(), 'Anonymous item incorrect download');
+        $this->assertEquals($curatedStats->curation_state, CURATE_STATE_CONSTRUCTION, "Anonymous folder incorrect curation_state");
+        $anonFolderChecked = true;
+      }
+      if($curatedStats->folder_id === $adminFolder->getFolderId()) {
+        $this->assertEquals($curatedStats->size, $adminItem->getSizebytes(), 'Admin item incorrect bytes');
+        $this->assertEquals($curatedStats->download, $adminItem->getDownload(), 'Admin item incorrect download');
+        $this->assertEquals($curatedStats->curation_state, CURATE_STATE_CONSTRUCTION, "Admin folder incorrect curation_state");
+        $adminFolderChecked = true;
+      }
+    }
+    $this->assertTrue($anonFolderChecked, "Anonymous folder missing");
+    $this->assertTrue($adminFolderChecked, "Admin folder missing");
+
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($adminFolder);
+    $loadedCuratedfolderDao = $curatedfolderModel->disableFolderCuration($anonFolder);
+  }
+}

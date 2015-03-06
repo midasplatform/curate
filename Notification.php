@@ -19,8 +19,7 @@
 =========================================================================*/
 require_once BASE_PATH . '/modules/api/library/APIEnabledNotification.php';
 /** Notification manager for the curate module */
-class Curate_Notification extends ApiEnabled_Notification
-  {
+class Curate_Notification extends ApiEnabled_Notification {
   public $moduleName = 'curate';
   public $_moduleComponents = array('Api');
 
@@ -31,6 +30,26 @@ class Curate_Notification extends ApiEnabled_Notification
     $this->moduleWebroot = $fc->getBaseUrl().'/modules/'.$this->moduleName;
     $this->coreWebroot = $fc->getBaseUrl().'/core';
     $this->enableWebAPI($this->moduleName);
+    $this->addcallback("CALLBACK_CORE_GET_LEFT_LINKS", 'getLeftLink');
+    $this->addcallback("CALLBACK_CORE_FOLDER_DELETED", 'folderDeleted');
     }
 
+  /** adds a left link to overall Midas layout for Curation Dashboard */
+  public function getLeftLink() {
+    $fc = Zend_Controller_Front::getInstance();
+    $baseURL = $fc->getBaseUrl();
+    $moduleWebroot = $baseURL . '/' . $this->moduleName;
+    return array('Curation Dashboard' => array($moduleWebroot . '/dashboard', $baseURL . '/core/public/images/icons/ok.png'));
   }
+
+  /** remove any curated folders if the folder is deleted */
+  public function folderDeleted($args) {
+    $folder = $args['folder'];
+    $curatedfolderModel = MidasLoader::loadModel('Curatedfolder', 'curate');
+    $curatedfolderDaos = $curatedfolderModel->findBy('folder_id', $folder->getFolderId());
+    if (count($curatedfolderDaos) > 0) {
+      $curatedfolderModel->delete($curatedfolderDaos[0]);
+    }
+  }
+
+}
