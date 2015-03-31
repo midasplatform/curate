@@ -118,9 +118,12 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       $userModel = MidasLoader::loadModel('User');
       $adminDaos = $userModel->findBy('admin', '1');
       $utilityComponent = MidasLoader::loadComponent('Utility');
+      $logger = Zend_Registry::get('logger');
       $body = "Dear qidw.rsna.org admin,\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been requested for approval.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
       foreach($adminDao as $admin) {
-        $utilityComponent->sendEmail($admin->getEmail(), 'Curated Folder Approval Requested', $body);
+          $subject = 'Curated Folder Approval Requested';
+          $logger->info('Sending an email to '.$admin->getEmail().' with subject ['.$subject.'] and body ['.$body.']');
+          $utilityComponent->sendEmail($admin->getEmail(), $subject, $body);
       }
 
 
@@ -154,14 +157,17 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
       $utilityComponent = MidasLoader::loadComponent('Utility');
       $policies = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
+      $logger = Zend_Registry::get('logger');
       foreach ($policies as $policy) {
           // if a policy exists on the folder, notify that user
       // TODO NOTIFY
       // TODO update message
       // probably set host and origin
+          $subject = 'Curated Folder Approval';
           $user = $policy->getUser();
           $body = "Dear ".$user->getFirstname()." ".$user->getLastname().",\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been approved for curation.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
-          $utilityComponent->sendEmail($user->getEmail(), 'Curated Folder Approval', $body);
+          $logger->info('Sending an email to '.$user->getEmail().' with subject ['.$subject.'] and body ['.$body.']');
+          $utilityComponent->sendEmail($user->getEmail(), $subject, $body);
 
           $folderpolicyuserModel->delete($policy);
       }
