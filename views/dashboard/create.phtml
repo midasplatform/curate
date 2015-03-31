@@ -22,8 +22,10 @@ echo '<script type="text/javascript" src="'.$this->moduleWebroot.'/public/js/das
         This will create a new folder for a curated dataset, located in a specific community, and with upload access for a specific user.
     </div>
     <div class='communitySelect'>
-        <label for='community'>Community</label>
-        <?php echo $this->form['community']; ?>
+        <label for='community_search'>Community</label>
+        <input type="text" id="community_search" value="<?php echo $this->t('Search...'); ?>" autocomplete="off"/>
+        <input type="hidden" name="community" id="community" value="init"/>
+        <div id="communitysearchloading" style="display:none"></div>
     </div>
     <div class='curatedFolder'>
         <div class='curatedFolderNameElement'>
@@ -36,8 +38,10 @@ echo '<script type="text/javascript" src="'.$this->moduleWebroot.'/public/js/das
         </div>
     </div>
     <div class='uploadingUserSelect'>
-        <label for='uploader'>Uploading User</label>
-        <?php echo $this->form['uploader']; ?>
+        <label for='uploader_search'>Uploading User</label>
+        <input type="text" id="uploader_search" value="<?php echo $this->t('Search...'); ?>" autocomplete="off"/>
+        <input type="hidden" name="uploader" id="uploader" value="init"/>
+        <div id="uploadersearchloading" style="display:none"></div>
     </div>
     <div>
         <?php echo $this->form['submit'] ?>
