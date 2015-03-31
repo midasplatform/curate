@@ -160,7 +160,7 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
       // TODO update message
       // probably set host and origin
           $user = $policy->getUser();
-          $body = "Dear ".$user->getFirstName()." ".$user->getLastName().",\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been approved for curation.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
+          $body = "Dear ".$user->getFirstname()." ".$user->getLastname().",\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been approved for curation.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
           $utilityComponent->sendEmail($user->getEmail(), 'Curated Folder Approval', $body);
 
           $folderpolicyuserModel->delete($policy);

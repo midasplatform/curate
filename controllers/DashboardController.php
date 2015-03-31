@@ -110,7 +110,7 @@ class Curate_DashboardController extends Curate_AppController {
         // TODO NOTIFY
         // TODO update message
         // probably set host and origin
-        $body = "Dear ".$user->getFirstName()." ".$user->getLastName().",\nA curated folder has been created for you to upload a dataset into at qidw.rsna.org.  The curated folder ".$curatedFolder->getName()." can be found at http://qidw.rsna.org/folder/".$curatedFolder->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
+        $body = "Dear ".$user->getFirstname()." ".$user->getLastname().",\nA curated folder has been created for you to upload a dataset into at qidw.rsna.org.  The curated folder ".$curatedFolder->getName()." can be found at http://qidw.rsna.org/folder/".$curatedFolder->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
         $utilityComponent->sendEmail($user->getEmail(), 'Curated Folder Created', $body);
 
         echo JsonComponent::encode(array(true, $this->t('Folder successfully created')));
