@@ -111,16 +111,25 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
           }
       }
 
+      // notify all site admins that a folder tracked under curation has been requested for approval
+      // TODO NOTIFY
+      // TODO update message
+      // probably set host and origin
+      $userModel = MidasLoader::loadModel('User');
+      $adminDaos = $userModel->findBy('admin', '1');
+      $utilityComponent = MidasLoader::loadComponent('Utility');
+      $logger = Zend_Registry::get('logger');
+      $body = "Dear qidw.rsna.org admin,\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been requested for approval.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
+      foreach($adminDao as $admin) {
+          $subject = 'Curated Folder Approval Requested';
+          $logger->info('Sending an email to '.$admin->getEmail().' with subject ['.$subject.'] and body ['.$body.']');
+          $utilityComponent->sendEmail($admin->getEmail(), $subject, $body);
+      }
+
+
       return $curatedfolderDao;
     }
   }
-    // TODO call api endpoint
-    //  check user has write
-    //  change state to requested
-    //  remove write access for user, replace with user specific read
-    // TODO frontend
-    //  change curation state
-    //  change action
 
   /**
    * approves the curation request on a curated folder that is currently
@@ -146,9 +155,21 @@ abstract class Curate_CuratedfolderModelBase extends Curate_AppModel {
 
       // delete any folderpolicyuser associated with the folder
       $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
+      $utilityComponent = MidasLoader::loadComponent('Utility');
       $policies = $folderpolicyuserModel->findBy('folder_id', $folderDao->getFolderId());
+      $logger = Zend_Registry::get('logger');
       foreach ($policies as $policy) {
-        $folderpolicyuserModel->delete($policy);
+          // if a policy exists on the folder, notify that user
+      // TODO NOTIFY
+      // TODO update message
+      // probably set host and origin
+          $subject = 'Curated Folder Approval';
+          $user = $policy->getUser();
+          $body = "Dear ".$user->getFirstname()." ".$user->getLastname().",\nThe qidw.rsna.org curated folder ".$curatedfolderDao->getName()." has been approved for curation.  The folder can be found at http://qidw.rsna.org/folder/".$curatedfolderDao->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
+          $logger->info('Sending an email to '.$user->getEmail().' with subject ['.$subject.'] and body ['.$body.']');
+          $utilityComponent->sendEmail($user->getEmail(), $subject, $body);
+
+          $folderpolicyuserModel->delete($policy);
       }
 
       // add community member read access

@@ -105,6 +105,17 @@ class Curate_DashboardController extends Curate_AppController {
         $folderpolicyuserModel = MidasLoader::loadModel('Folderpolicyuser');
         $folderpolicyuserModel->createPolicy($user, $curatedFolder, MIDAS_POLICY_WRITE);
 
+        // notify the uploader user that the curated folder has been created
+        $utilityComponent = MidasLoader::loadComponent('Utility');
+        // TODO NOTIFY
+        // TODO update message
+        // probably set host and origin
+        $body = "Dear ".$user->getFirstname()." ".$user->getLastname().",\nA curated folder has been created for you to upload a dataset into at qidw.rsna.org.  The curated folder ".$curatedFolder->getName()." can be found at http://qidw.rsna.org/folder/".$curatedFolder->getFolderId()." .  You will need to log in to view it.\n\nThanks,\nqidw.rsna.org admin\n";
+        $logger = Zend_Registry::get('logger');
+        $subject = 'Curated Folder Created';
+        $logger->info('Sending an email to '.$user->getEmail().' with subject ['.$subject.'] and body ['.$body.']');
+        $utilityComponent->sendEmail($user->getEmail(), $subect, $body);
+
         echo JsonComponent::encode(array(true, $this->t('Folder successfully created')));
         return;
     } else {
