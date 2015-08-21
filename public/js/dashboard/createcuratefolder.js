@@ -1,9 +1,10 @@
+// Midas Server. Copyright Kitware SAS. Licensed under the Apache License 2.0.
+
 var midas = midas || {};
 midas.curate = midas.curate || {};
 
-
 $('#createCuratedFolderForm').ajaxForm({
-    beforeSubmit: validateCreateCuratedFolder ,
+    beforeSubmit: validateCreateCuratedFolder,
     success: successCreateCuratedFolder
 });
 
@@ -43,7 +44,6 @@ function successCreateCuratedFolder(responseText, statusText, xhr, form) {
 
 $(function () {
     'use strict';
-
     // community
 
     $('#community_search').focus(function () {
@@ -63,7 +63,7 @@ $(function () {
     $.widget("custom.communitycatcomplete", $.ui.autocomplete, {
         _renderMenu: function (ul, items) {
             var self = this,
-            currentCategory = "Communities";
+                currentCategory = "Communities";
             ul.append('<li class="search-category">' + currentCategory + "</li>");
             $.each(items, function (index, item) {
                 if (item.category === currentCategory) {
@@ -89,19 +89,19 @@ $(function () {
             $("#communitysearchloading").show();
 
             lastShareXhr = $.getJSON($('.webroot').val() + "/search/live?communitySearch=",
-            request, function (data, status, xhr) {
-                $("#communitysearchloading").hide();
-                var filteredData = [];
-                $.each(data, function(ind, resource) {
-                    if (resource.category === "Communities") {
-                        filteredData.push(resource);
+                request, function (data, status, xhr) {
+                    $("#communitysearchloading").hide();
+                    var filteredData = [];
+                    $.each(data, function (ind, resource) {
+                        if (resource.category === "Communities") {
+                            filteredData.push(resource);
+                        }
+                    });
+                    communitycache[term] = filteredData;
+                    if (xhr === lastShareXhr) {
+                        response(filteredData);
                     }
                 });
-                communitycache[term] = filteredData;
-                if (xhr === lastShareXhr) {
-                    response(filteredData);
-                }
-            });
         }, // end source
         select: function (event, ui) {
             'use strict';
@@ -129,7 +129,7 @@ $(function () {
     $.widget("custom.usercatcomplete", $.ui.autocomplete, {
         _renderMenu: function (ul, items) {
             var self = this,
-            currentCategory = "";
+                currentCategory = "";
             $.each(items, function (index, item) {
                 if (item.category != currentCategory) {
                     ul.append('<li class="search-category">' + item.category + "</li>");
@@ -156,13 +156,13 @@ $(function () {
             $("#uploadersearchloading").show();
 
             lastShareXhr = $.getJSON($('.webroot').val() + "/search/live?userSearch=true&allowEmail",
-            request, function (data, status, xhr) {
-                $("#uploadersearchloading").hide();
-                usercache[term] = data;
-                if (xhr === lastShareXhr) {
-                    response(data);
-                }
-            });
+                request, function (data, status, xhr) {
+                    $("#uploadersearchloading").hide();
+                    usercache[term] = data;
+                    if (xhr === lastShareXhr) {
+                        response(data);
+                    }
+                });
         }, // end source
         select: function (event, ui) {
             'use strict';
@@ -170,6 +170,4 @@ $(function () {
             $('#uploader').val(ui.item.userid);
         } // end select
     });
-
 });
-

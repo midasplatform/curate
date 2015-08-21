@@ -1,9 +1,9 @@
 <?php
 /*=========================================================================
- MIDAS Server
- Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
+ Midas Server
+ Copyright Kitware SAS, 26 rue Louis Guérin, 69100 Villeurbanne, France.
  All rights reserved.
- More information http://www.kitware.com
+ For more information visit http://www.kitware.com/.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -22,16 +22,17 @@ require_once BASE_PATH.'/modules/curate/models/base/ModeratorModelBase.php';
 require_once BASE_PATH.'/modules/curate/models/dao/ModeratorDao.php';
 
 /** PDO model template for the curate module */
-class Curate_ModeratorModel extends Curate_ModeratorModelBase {
+class Curate_ModeratorModel extends Curate_ModeratorModelBase
+{
+    /** get All */
+    public function getAll()
+    {
+        $rowset = $this->database->fetchAll($this->database->select()->order(array('moderator_id')));
+        $results = array();
+        foreach ($rowset as $row) {
+            $results[] = $this->initDao('Moderator', $row, 'curate');
+        }
 
-  /** get All */
-  public function getAll() {
-    $rowset = $this->database->fetchAll($this->database->select()->order(array('moderator_id')));
-    $results = array();
-    foreach ($rowset as $row) {
-      $results[] = $this->initDao('Moderator', $row, 'curate');
+        return $results;
     }
-    return $results;
-  }
-
 }

@@ -18,8 +18,8 @@
  limitations under the License.
 =========================================================================*/
 
-/** App DAO for the curate module */
-class Curate_AppDao extends MIDAS_GlobalDao
+/** Bootstrap for the curate module. */
+class Curate_Bootstrap extends Zend_Application_Module_Bootstrap
 {
-    public $_module = 'curate';
+    public $moduleName = 'curate';
 }

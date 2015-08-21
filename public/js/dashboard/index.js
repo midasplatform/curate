@@ -1,8 +1,9 @@
+// Midas Server. Copyright Kitware SAS. Licensed under the Apache License 2.0.
+
 var midas = midas || {};
 midas.curate = midas.curate || {};
 
-
-midas.curate.createNewCuratedFolder = function() {
+midas.curate.createNewCuratedFolder = function () {
     'use strict';
     if (json.global.logged) {
         midas.loadDialog('createCuratedFolder', '/curate/dashboard/create');
@@ -12,15 +13,15 @@ midas.curate.createNewCuratedFolder = function() {
     }
 };
 
-midas.curate.adminApprove = function(folderId) {
+midas.curate.adminApprove = function (folderId) {
     'use strict';
     ajaxWebApi.ajax({
         method: 'midas.curate.approve.curation',
         args: 'folderId=' + folderId,
-        success: function(response) {
+        success: function (response) {
             if (response.data == 'OK') {
-                $('#curatedFolder'+folderId+' .curationState').text('approved');
-                $('#curatedFolder'+folderId+' .curationAction').text('');
+                $('#curatedFolder' + folderId + ' .curationState').text('approved');
+                $('#curatedFolder' + folderId + ' .curationAction').text('');
             } else {
                 midas.createNotice(response.data, 4000, 'error');
             }
@@ -28,16 +29,16 @@ midas.curate.adminApprove = function(folderId) {
     });
 }
 
-midas.curate.uploaderRequestApproval = function(folderId) {
+midas.curate.uploaderRequestApproval = function (folderId) {
     'use strict';
     ajaxWebApi.ajax({
         method: 'midas.curate.request.approval',
         args: 'folderId=' + folderId,
-        success: function(response) {
+        success: function (response) {
             if (response.data == 'OK') {
-                $('#curatedFolder'+folderId+' .curationState').text('requested');
+                $('#curatedFolder' + folderId + ' .curationState').text('requested');
                 var actionHTML = '<img src="/core/public/images/icons/time.png" style="padding-right: 5px;">wait for approval';
-                $('#curatedFolder'+folderId+' .curationAction').html(actionHTML);
+                $('#curatedFolder' + folderId + ' .curationAction').html(actionHTML);
             } else {
                 midas.createNotice(response.data, 4000, 'error');
             }
@@ -45,8 +46,7 @@ midas.curate.uploaderRequestApproval = function(folderId) {
     });
 }
 
-
-$(function() {
+$(function () {
     'use strict';
     $('#curateDashboardTable').show();
 });

@@ -1,8 +1,8 @@
 #=============================================================================
-# MIDAS Server
-# Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
+# Midas Server
+# Copyright Kitware SAS, 26 rue Louis Guérin, 69100 Villeurbanne, France.
 # All rights reserved.
-# More information http://www.kitware.com
+# For more information visit http://www.kitware.com/.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +17,10 @@
 # limitations under the License.
 #=============================================================================
 
-set( module_name curate )
-to_titlecase( ${module_name} module_name_titlecase )
+set(module_name curate)
+to_titlecase(${module_name} module_name_titlecase)
 
-add_subdirectory( controllers )
-add_subdirectory( models )
+add_midas_style_test(Style${module_name_titlecase} ${CMAKE_SOURCE_DIR}/modules/${module_name})
 
-add_midas_style_test( Style${module_name_titlecase}AppController ${CMAKE_SOURCE_DIR}/modules/${module_name}/AppController.php )
-add_midas_style_test( Style${module_name_titlecase}Controllers ${CMAKE_SOURCE_DIR}/modules/${module_name}/controllers )
-add_midas_style_test( Style${module_name_titlecase}Models ${CMAKE_SOURCE_DIR}/modules/${module_name}/models )
-add_midas_style_test( Style${module_name_titlecase}Notification ${CMAKE_SOURCE_DIR}/modules/${module_name}/Notification.php )
+add_subdirectory(controllers)
+add_subdirectory(models)

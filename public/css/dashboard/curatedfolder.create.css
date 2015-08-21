@@ -1,12 +1,26 @@
-form#createCuratedFolderForm label{width:100px !important;}
+/* Midas Server. Copyright Kitware SAS. Licensed under the Apache License 2.0. */
 
-form#createCuratedFolderForm div#createCuratedFolderInstructions { padding-bottom: 30px;}
+form#createCuratedFolderForm label {
+    width: 100px !important;
+}
 
-form#createCuratedFolderForm div.communitySelect { padding-bottom: 20px;}
+form#createCuratedFolderForm div#createCuratedFolderInstructions {
+    padding-bottom: 30px;
+}
 
-form#createCuratedFolderForm div.curatedFolderNameElement { padding-bottom: 5px;}
+form#createCuratedFolderForm div.communitySelect {
+    padding-bottom: 20px;
+}
 
-form#createCuratedFolderForm div.curatedFolder { padding-bottom: 20px;}
+form#createCuratedFolderForm div.curatedFolderNameElement {
+    padding-bottom: 5px;
+}
 
-form#createCuratedFolderForm div.uploadingUserSelect { padding-bottom: 30px;}
+form#createCuratedFolderForm div.curatedFolder {
+    padding-bottom: 20px;
+}
+
+form#createCuratedFolderForm div.uploadingUserSelect {
+    padding-bottom: 30px;
+}
 
