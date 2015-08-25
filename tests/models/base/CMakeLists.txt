@@ -1,8 +1,8 @@
 #=============================================================================
-# MIDAS Server
-# Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
+# Midas Server
+# Copyright Kitware SAS, 26 rue Louis Guérin, 69100 Villeurbanne, France.
 # All rights reserved.
-# More information http://www.kitware.com
+# For more information visit http://www.kitware.com/.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,5 +17,8 @@
 # limitations under the License.
 #=============================================================================
 
-add_midas_test( CurateCuratedfolderModel CuratedfolderModelTest.php )
-add_midas_test( CurateModeratorModel ModeratorModelTest.php )
+set(module_name curate)
+to_titlecase(${module_name} module_name_titlecase)
+
+add_midas_test(${module_name_titlecase}CuratedfolderModel CuratedfolderModelTest.php)
+add_midas_test(${module_name_titlecase}ModeratorModel ModeratorModelTest.php)

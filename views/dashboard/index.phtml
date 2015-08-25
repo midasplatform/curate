@@ -1,13 +1,23 @@
 <?php
 /*=========================================================================
-MIDDAS Server
-Copyright (c) Kitware SAS. 20 rue de la Villette. All rights reserved.
-69328 Lyon, FRANCE.
-See Copyright.txt for details.
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notices for more information.
+ Midas Server
+ Copyright Kitware SAS, 26 rue Louis Guérin, 69100 Villeurbanne, France.
+ All rights reserved.
+ For more information visit http://www.kitware.com/.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0.txt
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 =========================================================================*/
+
 $this->headScript()->appendFile($this->moduleWebroot.'/public/js/dashboard/index.js');
 $this->headScript()->appendFile($this->coreWebroot.'/public/js/common/common.browser.js');
 $this->headScript()->appendFile($this->apiWebroot.'/public/js/common/common.ajaxapi.js');
@@ -15,52 +25,60 @@ $this->headScript()->appendFile($this->apiWebroot.'/public/js/common/common.ajax
 <div class="viewMain">
     <div id="tabs-data">
 
-                <table id="curateDashboardTable" class="midasTree">
-                    <thead>
-                    <th class="thDataset"><?php echo $this->t('Dataset'); ?></th>
-                    <th class="thCurationState"><?php echo $this->t('Curation State'); ?></th>
-                    <th class="thSizeBytes"><?php echo $this->t('Size Bytes'); ?></th>
-                    <th class="thDownloads"><?php echo $this->t('Downloads'); ?></th>
-                    <th class="thAction"><?php echo $this->t('Action'); ?></th>
-                    </thead>
-                    <tbody>
-                    <?php
-                    foreach ($this->curatedFolders as $curated) {
-                        $size = $curated['size'];
-                        $download = $curated['download'];
-                        $folder_id = $curated['folder_id'];
-                        $curatedfolder_id = $curated['curatedfolder_id'];
-                        $name = $curated['name'];
-                        $curation_state = $curated['curation_state'];
-                        echo "<tr id='curatedFolder{$this->escape($folder_id)}'>";
-                        echo "  <td><a href=\"/folder/{$folder_id}\">{$name}</a></td>";
-                        echo "  <td class='curationState'>{$curation_state}</td>";
-                        echo "  <td>{$size}</td>";
-                        echo "  <td>{$download}</td>";
-                        echo "  <td class='curationAction'>";
-                        if ($this->isAdmin) {
-                           if($curation_state == CURATE_STATE_CONSTRUCTION) {
-                               echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for request";
-                           } else if ($curation_state == CURATE_STATE_REQUESTED) {
-                               echo "<a onclick=\"midas.curate.adminApprove($folder_id);\"><img src=\"/core/public/images/icons/ok.png\" style=\"padding-right: 5px;\">approve request</a>";
-                           } else if ($curation_state == CURATE_STATE_APPROVED) {
-                               //
-                           }
+        <table id="curateDashboardTable" class="midasTree">
+            <thead>
+            <th class="thDataset"><?php echo $this->t('Dataset'); ?></th>
+            <th class="thCurationState"><?php echo $this->t('Curation State'); ?></th>
+            <th class="thSizeBytes"><?php echo $this->t('Size Bytes'); ?></th>
+            <th class="thDownloads"><?php echo $this->t('Downloads'); ?></th>
+            <th class="thAction"><?php echo $this->t('Action'); ?></th>
+            </thead>
+            <tbody>
+            <?php
+            foreach ($this->curatedFolders as $curated) {
+                $size = $curated['size'];
+                $download = $curated['download'];
+                $folder_id = $curated['folder_id'];
+                $curatedfolder_id = $curated['curatedfolder_id'];
+                $name = $curated['name'];
+                $curation_state = $curated['curation_state'];
+                echo "<tr id='curatedFolder{$this->escape($folder_id)}'>";
+                echo "  <td><a href=\"/folder/{$folder_id}\">{$name}</a></td>";
+                echo "  <td class='curationState'>{$curation_state}</td>";
+                echo "  <td>{$size}</td>";
+                echo "  <td>{$download}</td>";
+                echo "  <td class='curationAction'>";
+                if ($this->isAdmin) {
+                    if ($curation_state == CURATE_STATE_CONSTRUCTION) {
+                        echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for request";
+                    } else {
+                        if ($curation_state == CURATE_STATE_REQUESTED) {
+                            echo "<a onclick=\"midas.curate.adminApprove($folder_id);\"><img src=\"/core/public/images/icons/ok.png\" style=\"padding-right: 5px;\">approve request</a>";
                         } else {
-                           if($curation_state == CURATE_STATE_CONSTRUCTION) {
-                               echo "<a onclick=\"midas.curate.uploaderRequestApproval($folder_id);\"><img src=\"/core/public/images/icons/lock.png\" style=\"padding-right: 5px;\">request approval</a>";
-                           } else if ($curation_state == CURATE_STATE_REQUESTED) {
-                               echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for approval";
-                           } else if ($curation_state == CURATE_STATE_APPROVED) {
-                               //
-                           }
+                            if ($curation_state == CURATE_STATE_APPROVED) {
+                                //
+                            }
                         }
-                        echo "</tr>";
                     }
-                    ?>
+                } else {
+                    if ($curation_state == CURATE_STATE_CONSTRUCTION) {
+                        echo "<a onclick=\"midas.curate.uploaderRequestApproval($folder_id);\"><img src=\"/core/public/images/icons/lock.png\" style=\"padding-right: 5px;\">request approval</a>";
+                    } else {
+                        if ($curation_state == CURATE_STATE_REQUESTED) {
+                            echo "<img src=\"/core/public/images/icons/time.png\" style=\"padding-right: 5px;\">wait for approval";
+                        } else {
+                            if ($curation_state == CURATE_STATE_APPROVED) {
+                                //
+                            }
+                        }
+                    }
+                }
+                echo "</tr>";
+            }
+            ?>
 
-                    </tbody>
-                </table>
+            </tbody>
+        </table>
     </div>
 </div>
 <div class="viewSideBar">
@@ -71,12 +89,12 @@ $this->headScript()->appendFile($this->apiWebroot.'/public/js/common/common.ajax
             echo "<li><a onclick='midas.curate.createNewCuratedFolder();'><img alt='' src='{$this->coreWebroot}/public/images/icons/folder_add.png'/> {$this->t(
                         'Create a Curated Folder'
                     )}</a></li>";
-                  }
-            echo "</ul>";
+        }
+        echo "</ul>";
         ?>
     </div>
     <div class="sideElement viewSelected">
-       <h1><?php echo $this->t('Checked') ?><span></span></h1>
-       <span></span>
+        <h1><?php echo $this->t('Checked') ?><span></span></h1>
+        <span></span>
     </div>
 </div>
